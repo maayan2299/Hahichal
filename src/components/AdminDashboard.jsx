@@ -1,1075 +1,843 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import {
-  Plus, Trash2, Edit3, Save, X, Package, Upload,
-  Image as ImageIcon, Tag, LogOut, Eye, EyeOff,
-  Star, Check, AlertCircle, Percent, Grid, ChevronRight, ArrowRight, Instagram
-} from 'lucide-react';
+import { Plus, Trash2, Edit3, Save, X, Upload, Image as ImageIcon, Tag, LogOut, Eye, EyeOff, Search } from 'lucide-react';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Supabase Configuration - ההיכל
+const supabaseUrl = 'https://taewbxptprdixsusvjfh.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhZXdieHB0cHJkaXhzdXN2amZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNDk0MjIsImV4cCI6MjA4NjgyNTQyMn0.TVgjzOt3UQW8FQVFk0Ze5Se2qOwS-WpqTSDHJlkIrFc';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const ADMIN_USERNAME = 'hahiechal';
-const ADMIN_PASSWORD = 'hiechal2026';
+// פרטי התחברות לדשבורד
+const ADMIN_USERNAME = 'heichal';
+const ADMIN_PASSWORD = 'heichal2026';
 
-// ─────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────
-function Toast({ message, type, onClose }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
-  return (
-    <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 shadow-2xl text-white text-sm font-medium
-      ${type === 'success' ? 'bg-black' : 'bg-red-600'}`}>
-      {type === 'success' ? <Check size={15} /> : <AlertCircle size={15} />}
-      {message}
-    </div>
-  );
-}
+const AdminDashboard = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loginError, setLoginError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-function Toggle({ value, onChange, label }) {
-  return (
-    <label className="flex items-center gap-3 cursor-pointer select-none">
-      <div onClick={() => onChange(!value)}
-        className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${value ? 'bg-black' : 'bg-gray-200'}`}>
-        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${value ? 'right-0.5' : 'left-0.5'}`} />
-      </div>
-      <span className="text-sm text-gray-700">{label}</span>
-    </label>
-  );
-}
-
-function Label({ children }) {
-  return <label className="block text-[10px] font-bold tracking-[0.15em] uppercase text-gray-400 mb-1.5">{children}</label>;
-}
-function Input({ className = '', ...props }) {
-  return <input className={`w-full px-3 py-2.5 border border-gray-200 focus:outline-none focus:border-black text-sm transition-colors bg-white ${className}`} {...props} />;
-}
-function Textarea({ className = '', ...props }) {
-  return <textarea className={`w-full px-3 py-2.5 border border-gray-200 focus:outline-none focus:border-black text-sm transition-colors bg-white resize-none ${className}`} {...props} />;
-}
-function SelEl({ children, className = '', ...props }) {
-  return <select className={`w-full px-3 py-2.5 border border-gray-200 focus:outline-none focus:border-black text-sm transition-colors bg-white ${className}`} {...props}>{children}</select>;
-}
-
-// ─────────────────────────────────────────
-// Product Form
-// ─────────────────────────────────────────
-function ProductForm({ editingId, initialForm, initialImages, categories, onSave, onCancel }) {
-  const [form, setForm] = useState(initialForm);
-  const [imageFiles, setImageFiles] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
-  const [existingImages, setExistingImages] = useState(initialImages || []);
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef();
-
-  function handleImagesChange(e) {
-    const files = Array.from(e.target.files);
-    setImageFiles(prev => [...prev, ...files]);
-    setImagePreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setUploading(true);
-    try {
-      const newImageUrls = [];
-      for (const file of imageFiles) {
-        const ext = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: upErr } = await supabase.storage.from('products').upload(fileName, file, { upsert: true });
-        if (upErr) throw upErr;
-        newImageUrls.push(`${supabaseUrl}/storage/v1/object/public/products/${fileName}`);
-      }
-      const allImages = [...existingImages, ...newImageUrls];
-      const productData = {
-        name: form.name,
-        price: parseFloat(form.price) || 0,
-        sale_price: form.sale_price ? parseFloat(form.sale_price) : null,
-        description: form.description,
-        category_id: form.category_id || null,
-        stock_quantity: form.stock_quantity !== '' ? parseInt(form.stock_quantity) : null,
-        is_active: form.is_active,
-        is_featured: form.is_featured,
-        show_stock: form.show_stock,
-        images: allImages,
-      };
-      if (editingId) {
-        const { error } = await supabase.from('products').update(productData).eq('id', editingId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('products').insert(productData);
-        if (error) throw error;
-      }
-      onSave(editingId ? 'עודכן ✓' : 'נוסף ✓');
-    } catch (err) {
-      onSave(null, 'שגיאה: ' + err.message);
-    } finally {
-      setUploading(false);
+  useEffect(() => {
+    const authToken = localStorage.getItem('heichal_admin_auth');
+    if (authToken === 'authenticated') {
+      setIsAuthenticated(true);
     }
-  }
+  }, []);
 
-  return (
-    <div className="bg-white border border-gray-200 p-6 mb-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-bold text-base">{editingId ? 'עריכת מוצר' : 'מוצר חדש'}</h3>
-        <button onClick={onCancel} className="text-gray-300 hover:text-black"><X size={20} /></button>
-      </div>
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <Label>שם המוצר *</Label>
-            <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="לדוגמה: פמוטי שבת מוכספים" />
-          </div>
-          <div>
-            <Label>קטגוריה</Label>
-            <SelEl value={form.category_id} onChange={e => setForm({ ...form, category_id: e.target.value })}>
-              <option value="">ללא קטגוריה</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </SelEl>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          <div>
-            <Label>מחיר רגיל (₪) *</Label>
-            <Input required type="number" step="0.01" min="0" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="0.00" />
-          </div>
-          <div>
-            <Label>מחיר מבצע (₪)</Label>
-            <div className="relative">
-              <Input type="number" step="0.01" min="0" value={form.sale_price} onChange={e => setForm({ ...form, sale_price: e.target.value })} placeholder="ריק = אין מבצע" className="pl-7" />
-              <Percent size={11} className="absolute left-2.5 top-3 text-gray-300" />
-            </div>
-          </div>
-          <div>
-            <Label>כמות במלאי</Label>
-            <Input type="number" min="0" value={form.stock_quantity} onChange={e => setForm({ ...form, stock_quantity: e.target.value })} placeholder="ריק = ללא מעקב" />
-          </div>
-        </div>
-        <div className="mb-4">
-          <Label>תיאור המוצר</Label>
-          <Textarea rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="תיאור קצר..." />
-        </div>
-        <div className="flex flex-wrap gap-6 py-4 border-y border-gray-100 mb-5">
-          <Toggle value={form.is_active} onChange={v => setForm({ ...form, is_active: v })} label="מוצר פעיל באתר" />
-          <Toggle value={form.is_featured} onChange={v => setForm({ ...form, is_featured: v })} label="⭐ מוצר מומלץ" />
-          <Toggle value={form.show_stock} onChange={v => setForm({ ...form, show_stock: v })} label="הצג סטטוס מלאי" />
-        </div>
-        <div className="mb-6">
-          <Label>תמונות המוצר</Label>
-          {existingImages.length > 0 && (
-            <div className="flex gap-2 flex-wrap mb-3">
-              {existingImages.map((url, i) => (
-                <div key={i} className="relative group w-20 h-20">
-                  <img src={url} className="w-full h-full object-cover border border-gray-200" />
-                  <button type="button" onClick={() => setExistingImages(p => p.filter((_, j) => j !== i))}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <X size={10} />
-                  </button>
-                  {i === 0 && <span className="absolute bottom-0 inset-x-0 text-center text-[9px] bg-black/60 text-white py-0.5">ראשית</span>}
-                </div>
-              ))}
-            </div>
-          )}
-          {imagePreviews.length > 0 && (
-            <div className="flex gap-2 flex-wrap mb-3">
-              {imagePreviews.map((url, i) => (
-                <div key={i} className="relative group w-20 h-20">
-                  <img src={url} className="w-full h-full object-cover border-2 border-[#D4AF37]/50" />
-                  <button type="button" onClick={() => { setImageFiles(p => p.filter((_, j) => j !== i)); setImagePreviews(p => p.filter((_, j) => j !== i)); }}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <X size={10} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <div onClick={() => fileRef.current?.click()}
-            className="border-2 border-dashed border-gray-200 hover:border-[#D4AF37] transition-colors cursor-pointer p-5 text-center">
-            <div className="flex flex-col items-center gap-1.5 text-gray-400">
-              <Upload size={20} />
-              <p className="text-sm font-medium">לחץ להוספת תמונות</p>
-              <p className="text-xs">ניתן לבחור מספר תמונות · JPG, PNG, WEBP</p>
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImagesChange} />
-          </div>
-        </div>
-        <div className="flex gap-3 justify-end">
-          <button type="button" onClick={onCancel} className="px-5 py-2.5 border border-gray-200 text-sm hover:bg-gray-50 transition-colors">ביטול</button>
-          <button type="submit" disabled={uploading}
-            className="flex items-center gap-2 px-6 py-2.5 bg-black text-white text-sm font-bold hover:bg-[#D4AF37] transition-colors disabled:opacity-50">
-            {uploading
-              ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> שומר...</>
-              : <><Save size={14} /> {editingId ? 'שמור שינויים' : 'הוסף מוצר'}</>}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
-// Product Row
-// ─────────────────────────────────────────
-function ProductRow({ product, categories, onEdit, onDelete, onRefresh, showToast }) {
-  const firstImg = product.images?.[0];
-  const catName = categories.find(c => c.id === product.category_id)?.name || '—';
-  const isOutOfStock = product.stock_quantity === 0;
-  const isOnSale = !!product.sale_price;
-
-  async function quickToggle(field, value) {
-    await supabase.from('products').update({ [field]: !value }).eq('id', product.id);
-    onRefresh();
-  }
-
-  return (
-    <div className="bg-white border border-gray-100 p-3 flex items-center gap-3 hover:border-gray-300 transition-colors">
-      <div className="w-12 h-12 flex-shrink-0 bg-gray-50 border border-gray-100 overflow-hidden">
-        {firstImg
-          ? <img src={firstImg} alt={product.name} className="w-full h-full object-cover" />
-          : <div className="w-full h-full flex items-center justify-center text-gray-200"><ImageIcon size={18} /></div>
-        }
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-semibold text-sm truncate">{product.name}</p>
-          {isOutOfStock && <span className="text-[10px] font-bold px-1.5 py-0.5 bg-red-50 text-red-500 border border-red-100">SOLD OUT</span>}
-          {isOnSale && <span className="text-[10px] font-bold px-1.5 py-0.5 bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20">SALE</span>}
-        </div>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className="text-xs text-gray-400">{catName}</span>
-          <span className="text-gray-200">·</span>
-          {isOnSale ? (
-            <span className="flex items-center gap-1">
-              <span className="text-xs text-gray-300 line-through">₪{parseFloat(product.price).toLocaleString('he-IL')}</span>
-              <span className="text-xs font-bold text-[#D4AF37]">₪{parseFloat(product.sale_price).toLocaleString('he-IL')}</span>
-            </span>
-          ) : (
-            <span className="text-xs text-gray-600">₪{parseFloat(product.price || 0).toLocaleString('he-IL')}</span>
-          )}
-          {product.stock_quantity !== null && (
-            <>
-              <span className="text-gray-200">·</span>
-              <span className={`text-xs ${isOutOfStock ? 'text-red-400' : 'text-green-600'}`}>
-                {isOutOfStock ? 'אזל מהמלאי' : `${product.stock_quantity} יח׳`}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <span className={`text-[10px] px-2 py-1 ${product.is_active ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-          {product.is_active ? 'פעיל' : 'מוסתר'}
-        </span>
-        <button onClick={() => quickToggle('is_featured', product.is_featured)}
-          className={`p-1.5 transition-colors ${product.is_featured ? 'text-[#D4AF37]' : 'text-gray-200 hover:text-[#D4AF37]'}`}>
-          <Star size={15} fill={product.is_featured ? 'currentColor' : 'none'} />
-        </button>
-        <button onClick={() => quickToggle('is_active', product.is_active)}
-          className="p-1.5 text-gray-300 hover:text-black transition-colors">
-          {product.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
-        </button>
-        <button onClick={() => onEdit(product)} className="p-1.5 text-gray-300 hover:text-black transition-colors">
-          <Edit3 size={14} />
-        </button>
-        <button onClick={() => onDelete(product.id)} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors">
-          <Trash2 size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
-// Login Screen
-// ─────────────────────────────────────────
-function LoginScreen({ onLogin }) {
-  const [form, setForm] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
-  const [showPass, setShowPass] = useState(false);
-
-  const handleSubmit = (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
-    if (form.username === ADMIN_USERNAME && form.password === ADMIN_PASSWORD) {
-      localStorage.setItem('hiechal_admin_auth', 'authenticated');
-      onLogin();
+    if (loginForm.username === ADMIN_USERNAME && loginForm.password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      localStorage.setItem('heichal_admin_auth', 'authenticated');
+      setLoginError('');
     } else {
-      setError('שם משתמש או סיסמה שגויים');
+      setLoginError('שם משתמש או סיסמה שגויים');
     }
   };
 
-  return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-5" dir="rtl">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-10">
-          <p className="text-[10px] tracking-[0.4em] uppercase text-[#D4AF37] mb-3">Admin Panel</p>
-          <h1 className="text-4xl font-bold tracking-[0.3em]" style={{ fontFamily: "'Frank Ruhl Libre', serif" }}>ההיכל</h1>
-          <div className="h-px w-12 bg-[#D4AF37] mx-auto mt-4" />
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>שם משתמש</Label>
-            <Input type="text" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} />
-          </div>
-          <div className="relative">
-            <Label>סיסמה</Label>
-            <Input type={showPass ? 'text' : 'password'} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
-            <button type="button" onClick={() => setShowPass(!showPass)}
-              className="absolute left-3 bottom-2.5 text-gray-300 hover:text-black transition-colors">
-              {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
-            </button>
-          </div>
-          {error && <p className="text-red-500 text-xs text-center flex items-center justify-center gap-1.5"><AlertCircle size={13} /> {error}</p>}
-          <button className="w-full py-3 bg-black text-white text-xs font-bold tracking-[0.2em] uppercase hover:bg-[#D4AF37] transition-colors duration-300">כניסה</button>
-        </form>
-      </div>
-    </div>
-  );
-}
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('heichal_admin_auth');
+    setLoginForm({ username: '', password: '' });
+  };
 
-// ─────────────────────────────────────────
-// Main Dashboard
-// ─────────────────────────────────────────
-function MainDashboard({ onLogout }) {
-  const [activeTab, setActiveTab] = useState('products');
-  const [toast, setToast] = useState(null);
-  const showToast = (message, type = 'success') => setToast({ message, type });
-
-  const tabs = [
-    { id: 'products', label: 'מוצרים', icon: <Package size={15} /> },
-    { id: 'featured', label: 'מומלצים', icon: <Star size={15} /> },
-    { id: 'categories', label: 'קטגוריות', icon: <Grid size={15} /> },
-    { id: 'banner', label: 'באנר', icon: <ImageIcon size={15} /> },
-    { id: 'instagram', label: 'אינסטגרם', icon: <Instagram size={15} /> },
-  ];
-
-  return (
-    <div className="min-h-screen bg-[#F8F8F6]" dir="rtl">
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="font-bold tracking-widest text-lg" style={{ fontFamily: "'Frank Ruhl Libre', serif" }}>ההיכל</h1>
-            <div className="h-4 w-px bg-gray-100" />
-            <span className="text-[10px] tracking-widest uppercase text-gray-400">ניהול</span>
-          </div>
-          <nav className="flex">
-            {tabs.map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-4 text-xs font-semibold tracking-wide border-b-2 transition-all
-                  ${activeTab === tab.id ? 'border-black text-black' : 'border-transparent text-gray-400 hover:text-black'}`}>
-                {tab.icon}
-                <span className="hidden sm:inline">{tab.label}</span>
+  if (!isAuthenticated) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FEFDFB', fontFamily: '"Frank Ruhl Libre", "Heebo", sans-serif', direction: 'rtl', padding: '20px' }}>
+        <div style={{ width: '100%', maxWidth: '400px', background: '#fff', border: '2px solid #D4AF37', padding: '40px', borderRadius: '8px', boxShadow: '0 4px 20px rgba(212,175,55,0.15)' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '8px', textAlign: 'center', color: '#2D2420' }}>ההיכל</h1>
+          <p style={{ textAlign: 'center', color: '#666', fontSize: '14px', marginBottom: '32px' }}>ניהול מוצרים</p>
+          <form onSubmit={handleLogin}>
+            <div style={{ marginBottom: '20px' }}>
+              <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} style={{ width: '100%', padding: '14px', border: '1px solid #ddd', fontSize: '15px', borderRadius: '4px' }} placeholder="שם משתמש" />
+            </div>
+            <div style={{ marginBottom: '24px', position: 'relative' }}>
+              <input type={showPassword ? 'text' : 'password'} value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} style={{ width: '100%', padding: '14px', paddingLeft: '45px', border: '1px solid #ddd', fontSize: '15px', borderRadius: '4px' }} placeholder="סיסמה" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}>
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
-            ))}
-          </nav>
-          <button onClick={onLogout} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-black transition-colors">
-            <LogOut size={14} />
-            <span className="hidden sm:inline">יציאה</span>
-          </button>
+            </div>
+            {loginError && <div style={{ padding: '12px', background: '#ffe6e6', color: '#cc0000', marginBottom: '20px', fontSize: '14px', textAlign: 'center', borderRadius: '4px' }}>{loginError}</div>}
+            <button type="submit" style={{ width: '100%', padding: '14px', background: '#D4AF37', color: '#fff', border: 'none', fontSize: '16px', fontWeight: '600', cursor: 'pointer', borderRadius: '4px', transition: 'all 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#B8941F'} onMouseOut={(e) => e.currentTarget.style.background = '#D4AF37'}>כניסה</button>
+          </form>
         </div>
-      </header>
+      </div>
+    );
+  }
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        {activeTab === 'products' && <ProductsTab showToast={showToast} />}
-        {activeTab === 'featured' && <FeaturedTab showToast={showToast} />}
-        {activeTab === 'categories' && <CategoriesTab showToast={showToast} />}
-        {activeTab === 'banner' && <BannerTab showToast={showToast} />}
-        {activeTab === 'instagram' && <InstagramTab showToast={showToast} />}
-      </main>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
-// Products Tab
-// ─────────────────────────────────────────
-const EMPTY_FORM = {
-  name: '', price: '', sale_price: '', description: '',
-  category_id: '', stock_quantity: '', is_active: true,
-  is_featured: false, show_stock: true,
+  return <MainDashboard onLogout={handleLogout} />;
 };
 
-function ProductsTab({ showToast }) {
+const MainDashboard = ({ onLogout }) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  
+  // Modal states
   const [editingProduct, setEditingProduct] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showImagesModal, setShowImagesModal] = useState(null);
+  const [showColorsModal, setShowColorsModal] = useState(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryForm, setCategoryForm] = useState({ name: '', display_order: 0 });
+  const [categoryImageFile, setCategoryImageFile] = useState(null);
+  
+  // Form data
+  const [formData, setFormData] = useState({
+    name: '',
+    price: '',
+    description: '',
+    category_id: '',
+    stock_quantity: 0,
+    engraving_available: false,
+    is_featured: false,
+    on_sale: false,
+    sale_type: 'percentage',
+    sale_percentage: '',
+    sale_price: ''
+  });
+  
+  // Image/Color states
+  const [productImages, setProductImages] = useState([]);
+  const [productColors, setProductColors] = useState([]);
+  const [newImageFile, setNewImageFile] = useState(null);
+  const [newColor, setNewColor] = useState({ name: '', code: '' });
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  async function fetchAll() {
+  const loadData = async () => {
     setLoading(true);
-    const [{ data: prods }, { data: cats }] = await Promise.all([
-      supabase.from('products').select('*').order('created_at', { ascending: false }),
-      supabase.from('categories').select('*').order('display_order'),
-    ]);
-    setProducts(prods || []);
-    setCategories(cats || []);
-    setLoading(false);
-  }
-
-  function startNew() { setEditingProduct(null); setShowForm(true); setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50); }
-  function startEdit(product) { setEditingProduct(product); setShowForm(true); setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50); }
-
-  function handleSave(successMsg, errMsg) {
-    if (errMsg) { showToast(errMsg, 'error'); return; }
-    showToast(successMsg);
-    setShowForm(false);
-    setEditingProduct(null);
-    fetchAll();
-  }
-
-  async function handleDelete(id) {
-    if (!confirm('למחוק את המוצר?')) return;
-    await supabase.from('products').delete().eq('id', id);
-    showToast('נמחק');
-    fetchAll();
-  }
-
-  const filtered = products.filter(p => p.name?.toLowerCase().includes(searchQuery.toLowerCase()));
-  const inStock = products.filter(p => (p.stock_quantity ?? 1) > 0).length;
-  const soldOut = products.filter(p => p.stock_quantity === 0).length;
-
-  return (
-    <div>
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        {[
-          { label: 'סה"כ מוצרים', value: products.length, color: 'text-black' },
-          { label: 'במלאי', value: inStock, color: 'text-green-600' },
-          { label: 'SOLD OUT', value: soldOut, color: 'text-red-500' },
-        ].map(s => (
-          <div key={s.label} className="bg-white border border-gray-100 p-4 text-center">
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-gray-400 mt-1">{s.label}</p>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center gap-3 mb-5">
-        <input type="text" placeholder="חיפוש מוצר..." value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          className="flex-1 px-3 py-2 border border-gray-200 text-sm focus:outline-none focus:border-black bg-white" />
-        <button onClick={startNew}
-          className="flex items-center gap-2 bg-black text-white px-4 py-2 text-sm font-semibold hover:bg-[#D4AF37] transition-colors whitespace-nowrap">
-          <Plus size={15} /> מוצר חדש
-        </button>
-      </div>
-      {showForm && (
-        <ProductForm
-          editingId={editingProduct?.id}
-          initialForm={editingProduct ? {
-            name: editingProduct.name || '', price: editingProduct.price || '',
-            sale_price: editingProduct.sale_price || '', description: editingProduct.description || '',
-            category_id: editingProduct.category_id || '', stock_quantity: editingProduct.stock_quantity ?? '',
-            is_active: editingProduct.is_active ?? true, is_featured: editingProduct.is_featured ?? false,
-            show_stock: editingProduct.show_stock ?? true,
-          } : { ...EMPTY_FORM }}
-          initialImages={editingProduct?.images || []}
-          categories={categories}
-          onSave={handleSave}
-          onCancel={() => { setShowForm(false); setEditingProduct(null); }}
-        />
-      )}
-      {loading ? (
-        <div className="text-center py-20 text-gray-300 text-sm">טוען...</div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-300">
-          <Package size={36} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">{searchQuery ? 'לא נמצאו תוצאות' : 'אין מוצרים עדיין'}</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <p className="text-xs text-gray-400 mb-2">💡 לחצי על הכוכב ⭐ כדי לסמן מוצר כנבחר / להסיר</p>
-          {filtered.map(product => (
-            <ProductRow key={product.id} product={product} categories={categories}
-              onEdit={startEdit} onDelete={handleDelete} onRefresh={fetchAll} showToast={showToast} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
-// Categories Tab
-// ─────────────────────────────────────────
-function CategoriesTab({ showToast }) {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [showNewCatForm, setShowNewCatForm] = useState(false);
-  const [editForm, setEditForm] = useState({});
-  const [newForm, setNewForm] = useState({ name: '', display_order: '' });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef();
-  const [catProducts, setCatProducts] = useState([]);
-  const [catProductsLoading, setCatProductsLoading] = useState(false);
-  const [showProductForm, setShowProductForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-
-  useEffect(() => { fetchCategories(); }, []);
-
-  async function fetchCategories() {
-    setLoading(true);
-    const { data } = await supabase.from('categories').select('*').order('display_order');
-    setCategories(data || []);
-    setLoading(false);
-  }
-
-  async function openCategory(cat) {
-    setSelectedCategory(cat);
-    setShowProductForm(false);
-    setEditingProduct(null);
-    setCatProductsLoading(true);
-    const { data } = await supabase.from('products').select('*').eq('category_id', cat.id).order('created_at', { ascending: false });
-    setCatProducts(data || []);
-    setCatProductsLoading(false);
-  }
-
-  async function refreshCatProducts() {
-    if (!selectedCategory) return;
-    setCatProductsLoading(true);
-    const { data } = await supabase.from('products').select('*').eq('category_id', selectedCategory.id).order('created_at', { ascending: false });
-    setCatProducts(data || []);
-    setCatProductsLoading(false);
-  }
-
-  function handleProductSave(successMsg, errMsg) {
-    if (errMsg) { showToast(errMsg, 'error'); return; }
-    showToast(successMsg);
-    setShowProductForm(false);
-    setEditingProduct(null);
-    refreshCatProducts();
-  }
-
-  async function handleDeleteProduct(id) {
-    if (!confirm('למחוק?')) return;
-    await supabase.from('products').delete().eq('id', id);
-    showToast('נמחק');
-    refreshCatProducts();
-  }
-
-  async function saveEditCat() {
-    setUploading(true);
     try {
-      let imageUrl = null;
-      if (imageFile) {
-        const ext = imageFile.name.split('.').pop();
-        const fileName = `cat-${editingId}-${Date.now()}.${ext}`;
-        await supabase.storage.from('categories').upload(fileName, imageFile, { upsert: true });
-        imageUrl = `${supabaseUrl}/storage/v1/object/public/categories/${fileName}`;
+      const [productsRes, categoriesRes] = await Promise.all([
+        supabase.from('products').select(`*, categories(name), product_images(image_url, is_primary)`).eq('is_active', true).order('created_at', { ascending: false }),
+        supabase.from('categories').select('*').order('display_order')
+      ]);
+      
+      if (productsRes.data) {
+        setProducts(productsRes.data.map(p => ({
+          ...p,
+          category_name: p.categories?.name || '',
+          primary_image: p.product_images?.find(i => i.is_primary)?.image_url || p.product_images?.[0]?.image_url,
+          images_count: p.product_images?.length || 0
+        })));
       }
-      const { error } = await supabase.from('categories').update({
-        name: editForm.name,
-        display_order: parseInt(editForm.display_order) || 0,
-        ...(imageUrl && { image_url: imageUrl })
-      }).eq('id', editingId);
-      if (error) throw error;
-      showToast('עודכן ✓');
-      setEditingId(null);
-      fetchCategories();
-    } catch (err) {
-      showToast('שגיאה: ' + err.message, 'error');
-    } finally {
-      setUploading(false);
+      
+      if (categoriesRes.data) setCategories(categoriesRes.data);
+    } catch (error) {
+      console.error('Error:', error);
     }
-  }
+    setLoading(false);
+  };
 
-  async function addCategory() {
-    if (!newForm.name) return;
-    const slug = newForm.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9\u0590-\u05FF-]/g, '');
-    const { error } = await supabase.from('categories').insert({ name: newForm.name, slug, display_order: parseInt(newForm.display_order) || 99 });
-    if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
-    showToast('נוספה ✓');
-    setShowNewCatForm(false);
-    setNewForm({ name: '', display_order: '' });
-    fetchCategories();
-  }
+  const uploadImage = async (file, bucket = 'product-images') => {
+    if (!file) return null;
+    try {
+      setUploading(true);
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${file.name.split('.').pop()}`;
+      const { error } = await supabase.storage.from(bucket).upload(fileName, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
+      setUploading(false);
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploading(false);
+      return null;
+    }
+  };
 
-  async function deleteCategory(id) {
-    if (!confirm('למחוק קטגוריה זו?')) return;
-    await supabase.from('categories').delete().eq('id', id);
-    showToast('נמחקה');
-    fetchCategories();
-  }
+  const handleSaveCategory = async (e) => {
+    e.preventDefault();
+    if (!categoryForm.name.trim()) {
+      alert('אנא הזן שם קטגוריה');
+      return;
+    }
 
-  if (selectedCategory) {
+    try {
+      let imageUrl = editingCategory?.image_url || null;
+      
+      if (categoryImageFile) {
+        imageUrl = await uploadImage(categoryImageFile, 'product-images');
+      }
+
+      if (editingCategory) {
+        await supabase.from('categories').update({
+          name: categoryForm.name.trim(),
+          image_url: imageUrl
+        }).eq('id', editingCategory.id);
+        alert('הקטגוריה עודכנה!');
+      } else {
+        const maxOrder = categories.length > 0 ? Math.max(...categories.map(c => c.display_order || 0)) : 0;
+        await supabase.from('categories').insert([{
+          name: categoryForm.name.trim(),
+          display_order: maxOrder + 1,
+          image_url: imageUrl
+        }]);
+        alert('הקטגוריה נוספה!');
+      }
+
+      setCategoryForm({ name: '', display_order: 0 });
+      setCategoryImageFile(null);
+      setShowCategoryModal(false);
+      setEditingCategory(null);
+      await loadData();
+    } catch (error) {
+      console.error('Error:', error);
+      alert('שגיאה בשמירת קטגוריה');
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    if (!confirm('למחוק את הקטגוריה? כל המוצרים בקטגוריה זו יאבדו את הקטגוריה שלהם.')) return;
+    
+    try {
+      await supabase.from('categories').delete().eq('id', categoryId);
+      alert('הקטגוריה נמחקה!');
+      await loadData();
+    } catch (error) {
+      console.error('Error:', error);
+      alert('שגיאה במחיקה');
+    }
+  };
+
+  const openEditCategoryModal = (category) => {
+    setEditingCategory(category);
+    setCategoryForm({
+      name: category.name,
+      display_order: category.display_order || 0
+    });
+    setCategoryImageFile(null);
+    setShowCategoryModal(true);
+  };
+
+  const openAddCategoryModal = () => {
+    setEditingCategory(null);
+    setCategoryForm({ name: '', display_order: 0 });
+    setCategoryImageFile(null);
+    setShowCategoryModal(true);
+  };
+
+  const handleSaveProduct = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.price) {
+      alert('אנא מלא שם ומחיר');
+      return;
+    }
+
+    try {
+      let finalSalePrice = null;
+      if (formData.on_sale) {
+        if (formData.sale_type === 'percentage' && formData.sale_percentage) {
+          const discount = (parseFloat(formData.price) * parseFloat(formData.sale_percentage)) / 100;
+          finalSalePrice = parseFloat(formData.price) - discount;
+        } else if (formData.sale_type === 'fixed' && formData.sale_price) {
+          finalSalePrice = parseFloat(formData.sale_price);
+        }
+      }
+
+      if (editingProduct) {
+        await supabase.from('products').update({
+          name: formData.name,
+          price: parseFloat(formData.price),
+          description: formData.description,
+          category_id: formData.category_id || null,
+          stock_quantity: parseInt(formData.stock_quantity) || 0,
+          engraving_available: formData.engraving_available,
+          is_featured: formData.is_featured,
+          sale_price: finalSalePrice
+        }).eq('id', editingProduct.id);
+        
+        alert('המוצר עודכן!');
+      } else {
+        const { data: newProduct, error } = await supabase.from('products').insert([{
+          name: formData.name,
+          price: parseFloat(formData.price),
+          description: formData.description,
+          category_id: formData.category_id || null,
+          stock_quantity: parseInt(formData.stock_quantity) || 0,
+          engraving_available: formData.engraving_available,
+          is_featured: formData.is_featured,
+          sale_price: finalSalePrice,
+          is_active: true
+        }]).select().single();
+
+        if (error) throw error;
+
+        if (newImageFile) {
+          const imageUrl = await uploadImage(newImageFile);
+          if (imageUrl) {
+            await supabase.from('product_images').insert([{
+              product_id: newProduct.id,
+              image_url: imageUrl,
+              is_primary: true,
+              display_order: 0
+            }]);
+          }
+        }
+        
+        alert('המוצר נוסף!');
+      }
+
+      await loadData();
+      closeModal();
+    } catch (error) {
+      console.error('Error:', error);
+      alert('שגיאה: ' + error.message);
+    }
+  };
+
+  const handleDelete = async (productId) => {
+    if (!confirm('למחוק את המוצר?')) return;
+    
+    try {
+      const { data: images } = await supabase.from('product_images').select('image_url').eq('product_id', productId);
+      if (images) {
+        for (const img of images) {
+          const fileName = img.image_url.split('/').pop();
+          await supabase.storage.from('product-images').remove([fileName]);
+        }
+      }
+      
+      await supabase.from('product_images').delete().eq('product_id', productId);
+      await supabase.from('products').delete().eq('id', productId);
+      
+      await loadData();
+      alert('המוצר נמחק!');
+    } catch (error) {
+      console.error('Error:', error);
+      alert('שגיאה במחיקה');
+    }
+  };
+
+  const openEditModal = (product) => {
+    setEditingProduct(product);
+    setFormData({
+      name: product.name,
+      price: product.price,
+      description: product.description || '',
+      category_id: product.category_id || '',
+      stock_quantity: product.stock_quantity || 0,
+      engraving_available: product.engraving_available || false,
+      is_featured: product.is_featured || false,
+      sale_price: product.sale_price || ''
+    });
+  };
+
+  const openAddModal = () => {
+    setShowAddModal(true);
+    setEditingProduct(null);
+    setFormData({
+      name: '',
+      price: '',
+      description: '',
+      category_id: '',
+      stock_quantity: 0,
+      engraving_available: false,
+      is_featured: false,
+      sale_price: ''
+    });
+    setNewImageFile(null);
+  };
+
+  const closeModal = () => {
+    setEditingProduct(null);
+    setShowAddModal(false);
+    setNewImageFile(null);
+  };
+
+  const openImagesModal = async (product) => {
+    setShowImagesModal(product);
+    const { data } = await supabase.from('product_images').select('*').eq('product_id', product.id).order('display_order');
+    setProductImages(data || []);
+  };
+
+  const addImage = async () => {
+    if (!newImageFile || !showImagesModal) return;
+    
+    const imageUrl = await uploadImage(newImageFile);
+    if (!imageUrl) return;
+
+    await supabase.from('product_images').insert([{
+      product_id: showImagesModal.id,
+      image_url: imageUrl,
+      is_primary: productImages.length === 0,
+      display_order: productImages.length
+    }]);
+
+    const { data } = await supabase.from('product_images').select('*').eq('product_id', showImagesModal.id);
+    setProductImages(data || []);
+    setNewImageFile(null);
+    await loadData();
+  };
+
+  const deleteImage = async (imageId, imageUrl) => {
+    if (!confirm('למחוק תמונה?')) return;
+    
+    const fileName = imageUrl.split('/').pop();
+    await supabase.storage.from('product-images').remove([fileName]);
+    await supabase.from('product_images').delete().eq('id', imageId);
+    
+    const { data } = await supabase.from('product_images').select('*').eq('product_id', showImagesModal.id);
+    setProductImages(data || []);
+    await loadData();
+  };
+
+  const setPrimary = async (imageId) => {
+    await supabase.from('product_images').update({ is_primary: false }).eq('product_id', showImagesModal.id);
+    await supabase.from('product_images').update({ is_primary: true }).eq('id', imageId);
+    
+    const { data } = await supabase.from('product_images').select('*').eq('product_id', showImagesModal.id);
+    setProductImages(data || []);
+    await loadData();
+  };
+
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || p.category_id === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  if (loading) {
     return (
-      <div>
-        <div className="flex items-center gap-2 mb-6">
-          <button onClick={() => { setSelectedCategory(null); setShowProductForm(false); }}
-            className="text-sm text-gray-400 hover:text-black transition-colors">קטגוריות</button>
-          <ChevronRight size={14} className="text-gray-300" />
-          <span className="text-sm font-semibold">{selectedCategory.name}</span>
-        </div>
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-base font-bold">{selectedCategory.name}</h2>
-            <p className="text-xs text-gray-400 mt-1">{catProducts.length} מוצרים בקטגוריה זו</p>
-          </div>
-          <button onClick={() => { setShowProductForm(true); setEditingProduct(null); }}
-            className="flex items-center gap-2 bg-black text-white px-4 py-2 text-sm font-semibold hover:bg-[#D4AF37] transition-colors">
-            <Plus size={15} /> הוסף מוצר לקטגוריה
-          </button>
-        </div>
-        {showProductForm && (
-          <ProductForm
-            editingId={editingProduct?.id}
-            initialForm={editingProduct ? {
-              name: editingProduct.name || '', price: editingProduct.price || '',
-              sale_price: editingProduct.sale_price || '', description: editingProduct.description || '',
-              category_id: selectedCategory.id, stock_quantity: editingProduct.stock_quantity ?? '',
-              is_active: editingProduct.is_active ?? true, is_featured: editingProduct.is_featured ?? false,
-              show_stock: editingProduct.show_stock ?? true,
-            } : { ...EMPTY_FORM, category_id: selectedCategory.id }}
-            initialImages={editingProduct?.images || []}
-            categories={categories}
-            onSave={handleProductSave}
-            onCancel={() => { setShowProductForm(false); setEditingProduct(null); }}
-          />
-        )}
-        {catProductsLoading ? (
-          <div className="text-center py-20 text-gray-300 text-sm">טוען...</div>
-        ) : catProducts.length === 0 ? (
-          <div className="text-center py-16 text-gray-300 border-2 border-dashed border-gray-200">
-            <Package size={32} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm mb-3">אין מוצרים בקטגוריה זו עדיין</p>
-            <button onClick={() => setShowProductForm(true)}
-              className="flex items-center gap-2 mx-auto bg-black text-white px-4 py-2 text-sm font-semibold hover:bg-[#D4AF37] transition-colors">
-              <Plus size={14} /> הוסף מוצר ראשון
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-xs text-gray-400 mb-2">💡 לחצי על הכוכב ⭐ לסימון נבחר</p>
-            {catProducts.map(product => (
-              <ProductRow key={product.id} product={product} categories={categories}
-                onEdit={p => { setEditingProduct(p); setShowProductForm(true); }}
-                onDelete={handleDeleteProduct} onRefresh={refreshCatProducts} showToast={showToast} />
-            ))}
-          </div>
-        )}
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FEFDFB' }}>
+        <div style={{ fontSize: '18px', color: '#D4AF37', fontWeight: '600' }}>טוען...</div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h2 className="text-base font-bold">ניהול קטגוריות</h2>
-          <p className="text-xs text-gray-400 mt-1">{categories.length} קטגוריות · לחצי על קטגוריה לצפייה במוצרים</p>
+    <div style={{ minHeight: '100vh', background: '#FEFDFB', fontFamily: '"Frank Ruhl Libre", "Heebo", sans-serif', direction: 'rtl' }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;600;700&family=Heebo:wght@300;400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        input, select, textarea { border: 1px solid #ddd; padding: 12px; font-family: 'Heebo', sans-serif; font-size: 15px; width: 100%; borderRadius: 4px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #D4AF37; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal { background: #fff; border-radius: 8px; padding: 30px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        @media (max-width: 768px) { .modal { padding: 20px; } }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ background: '#fff', borderBottom: '2px solid #D4AF37', padding: '20px', position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#2D2420', marginBottom: '4px' }}>ההיכל</h1>
+            <p style={{ fontSize: '14px', color: '#666' }}>ניהול מוצרים ותשמישי קדושה</p>
+          </div>
+          <button onClick={onLogout} style={{ background: '#D4AF37', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#B8941F'} onMouseOut={(e) => e.currentTarget.style.background = '#D4AF37'}>
+            <LogOut size={16} /> יציאה
+          </button>
         </div>
-        <button onClick={() => setShowNewCatForm(!showNewCatForm)}
-          className="flex items-center gap-2 bg-black text-white px-4 py-2 text-sm font-semibold hover:bg-[#D4AF37] transition-colors">
-          <Plus size={14} /> קטגוריה חדשה
-        </button>
       </div>
-      {showNewCatForm && (
-        <div className="bg-white border border-gray-200 p-4 mb-4">
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <div className="col-span-2">
-              <Label>שם הקטגוריה *</Label>
-              <Input value={newForm.name} onChange={e => setNewForm({ ...newForm, name: e.target.value })} placeholder="לדוגמה: שבת וחגים" />
-            </div>
-            <div>
-              <Label>סדר תצוגה</Label>
-              <Input type="number" value={newForm.display_order} onChange={e => setNewForm({ ...newForm, display_order: e.target.value })} placeholder="1" />
-            </div>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowNewCatForm(false)} className="px-4 py-2 border border-gray-200 text-sm hover:bg-gray-50">ביטול</button>
-            <button onClick={addCategory} className="flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-bold hover:bg-[#D4AF37] transition-colors">
-              <Plus size={13} /> הוסף
+
+      {/* Tabs Navigation */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #eee' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '0' }}>
+          {['overview', 'products', 'categories'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: '16px 24px',
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === tab ? '3px solid #D4AF37' : '3px solid transparent',
+                color: activeTab === tab ? '#D4AF37' : '#666',
+                fontWeight: activeTab === tab ? '600' : '400',
+                fontSize: '15px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              {tab === 'overview' && 'סקירה כללית'}
+              {tab === 'products' && 'מוצרים'}
+              {tab === 'categories' && 'קטגוריות'}
             </button>
-          </div>
-        </div>
-      )}
-      {loading ? <div className="text-center py-20 text-gray-300 text-sm">טוען...</div> : (
-        <div className="space-y-2">
-          {categories.map(cat => (
-            <div key={cat.id} className="bg-white border border-gray-100 hover:border-gray-300 transition-colors">
-              {editingId === cat.id ? (
-                <div className="p-3 flex flex-wrap gap-3 items-end">
-                  <div><Label>שם</Label><Input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-40" /></div>
-                  <div><Label>סדר</Label><Input type="number" value={editForm.display_order} onChange={e => setEditForm({ ...editForm, display_order: e.target.value })} className="w-16" /></div>
-                  <div>
-                    <Label>תמונה</Label>
-                    <button type="button" onClick={() => fileRef.current?.click()}
-                      className="flex items-center gap-2 px-3 py-2.5 border border-dashed border-gray-200 text-xs text-gray-400 hover:border-[#D4AF37] transition-colors">
-                      <Upload size={13} /> {imagePreview ? '✓ נבחרה' : 'העלה'}
-                    </button>
-                    <input ref={fileRef} type="file" accept="image/*" className="hidden"
-                      onChange={e => { setImageFile(e.target.files[0]); setImagePreview(URL.createObjectURL(e.target.files[0])); }} />
-                  </div>
-                  {imagePreview && <img src={imagePreview} className="w-10 h-10 object-cover border" />}
-                  <div className="flex gap-2">
-                    <button onClick={saveEditCat} disabled={uploading}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-black text-white text-xs font-bold hover:bg-[#D4AF37] transition-colors">
-                      <Save size={12} /> {uploading ? 'שומר...' : 'שמור'}
-                    </button>
-                    <button onClick={() => setEditingId(null)} className="px-3 py-2 border border-gray-200 text-xs hover:bg-gray-50">ביטול</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <button onClick={() => openCategory(cat)} className="flex items-center gap-3 flex-1 p-3 text-right">
-                    <div className="w-10 h-10 bg-gray-50 border border-gray-100 flex-shrink-0 overflow-hidden">
-                      {cat.image_url
-                        ? <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
-                        : <div className="w-full h-full flex items-center justify-center text-gray-200"><Tag size={14} /></div>}
-                    </div>
-                    <div className="flex-1 text-right">
-                      <p className="text-sm font-semibold">{cat.name}</p>
-                      <p className="text-xs text-gray-300">לחץ לצפייה במוצרים ←</p>
-                    </div>
-                    <ArrowRight size={14} className="text-gray-300 ml-1" />
-                  </button>
-                  <div className="flex gap-1 p-3 pl-3">
-                    <button onClick={(e) => { e.stopPropagation(); setEditingId(cat.id); setEditForm({ name: cat.name, display_order: cat.display_order || 0 }); setImagePreview(null); setImageFile(null); }}
-                      className="p-1.5 text-gray-300 hover:text-black transition-colors"><Edit3 size={14} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); deleteCategory(cat.id); }}
-                      className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
-                  </div>
-                </div>
-              )}
-            </div>
           ))}
         </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
-// Featured Tab
-// ─────────────────────────────────────────
-function FeaturedTab({ showToast }) {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => { fetchAll(); }, []);
-
-  async function fetchAll() {
-    setLoading(true);
-    const { data } = await supabase.from('products').select('*').eq('is_active', true).order('name');
-    setProducts(data || []);
-    setLoading(false);
-  }
-
-  async function toggle(product) {
-    await supabase.from('products').update({ is_featured: !product.is_featured }).eq('id', product.id);
-    showToast(product.is_featured ? 'הוסר מהנבחרים' : '⭐ נוסף לנבחרים');
-    fetchAll();
-  }
-
-  const featured = products.filter(p => p.is_featured);
-  const rest = products.filter(p => !p.is_featured);
-
-  return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-base font-bold">מוצרים נבחרים</h2>
-        <p className="text-xs text-gray-400 mt-1">{featured.length} מוצרים יוצגו בסקשן "המיוחדים שלנו" · לחצי על מוצר לסימון/ביטול</p>
       </div>
-      {loading ? <div className="text-center py-20 text-gray-300 text-sm">טוען...</div> : (
-        <>
-          {featured.length > 0 && (
-            <div className="mb-8">
-              <p className="text-[10px] font-bold tracking-widest uppercase text-[#D4AF37] mb-3">⭐ נבחרים ({featured.length})</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {featured.map(p => <FeaturedCard key={p.id} product={p} onToggle={() => toggle(p)} isFeatured />)}
+
+      {/* Main Content */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '30px 20px' }}>
+        
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div>
+            {/* Statistics */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+              <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(212,175,55,0.1)', border: '1px solid #D4AF37' }}>
+                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>סה"כ מוצרים</div>
+                <div style={{ fontSize: '32px', fontWeight: '700', color: '#D4AF37' }}>{products.length}</div>
+              </div>
+              <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>קטגוריות</div>
+                <div style={{ fontSize: '32px', fontWeight: '700' }}>{categories.length}</div>
+              </div>
+              <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>מוצרים מומלצים</div>
+                <div style={{ fontSize: '32px', fontWeight: '700' }}>{products.filter(p => p.is_featured).length}</div>
+              </div>
+              <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>מוצרים במבצע</div>
+                <div style={{ fontSize: '32px', fontWeight: '700' }}>{products.filter(p => p.sale_price).length}</div>
               </div>
             </div>
-          )}
-          {rest.length > 0 && (
-            <div>
-              <p className="text-[10px] font-bold tracking-widest uppercase text-gray-300 mb-3">שאר המוצרים</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {rest.map(p => <FeaturedCard key={p.id} product={p} onToggle={() => toggle(p)} />)}
+
+            {/* Categories Overview */}
+            <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '20px' }}>קטגוריות</h2>
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {categories.map(cat => {
+                  const count = products.filter(p => p.category_id === cat.id).length;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setSelectedCategory(cat.id.toString());
+                        setActiveTab('products');
+                      }}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f9f9f9', borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'right' }}
+                      onMouseOver={(e) => e.currentTarget.style.background = '#FFF8E7'}
+                      onMouseOut={(e) => e.currentTarget.style.background = '#f9f9f9'}
+                    >
+                      <span style={{ fontSize: '15px', fontWeight: '500' }}>{cat.name}</span>
+                      <span style={{ fontSize: '14px', color: '#666' }}>{count} מוצרים</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-function FeaturedCard({ product, onToggle, isFeatured }) {
-  const img = product.images?.[0];
-  return (
-    <div onClick={onToggle}
-      className={`relative border-2 cursor-pointer group overflow-hidden transition-all
-        ${isFeatured ? 'border-[#D4AF37]' : 'border-gray-100 hover:border-gray-200'}`}>
-      <div className="aspect-square bg-gray-50">
-        {img
-          ? <img src={img} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          : <div className="w-full h-full flex items-center justify-center text-gray-200"><ImageIcon size={20} /></div>}
-      </div>
-      <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow
-        ${isFeatured ? 'bg-[#D4AF37] text-white' : 'bg-white text-gray-300'}`}>
-        <Star size={11} fill={isFeatured ? 'currentColor' : 'none'} />
-      </div>
-      <div className="p-2 bg-white border-t border-gray-50">
-        <p className="text-xs font-semibold truncate">{product.name}</p>
-        <p className="text-xs text-[#D4AF37] mt-0.5">
-          {product.sale_price ? `₪${parseFloat(product.sale_price).toLocaleString('he-IL')}` : `₪${parseFloat(product.price || 0).toLocaleString('he-IL')}`}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
-// Banner Tab
-// ─────────────────────────────────────────
-function BannerTab({ showToast }) {
-  const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState(null);
-  const [currentBanner, setCurrentBanner] = useState(null);
-  const fileRef = useRef();
-
-  useEffect(() => {
-    setCurrentBanner(`${supabaseUrl}/storage/v1/object/public/banners/banner.png?t=${Date.now()}`);
-  }, []);
-
-  async function handleUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    setPreview(URL.createObjectURL(file));
-    setUploading(true);
-    try {
-      const { error } = await supabase.storage.from('banners').upload('banner.png', file, { upsert: true, contentType: file.type });
-      if (error) throw error;
-      setCurrentBanner(`${supabaseUrl}/storage/v1/object/public/banners/banner.png?t=${Date.now()}`);
-      setPreview(null);
-      showToast('הבאנר עודכן! 🎉');
-    } catch (err) {
-      showToast('שגיאה: ' + err.message, 'error');
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  return (
-    <div className="max-w-2xl">
-      <div className="mb-6">
-        <h2 className="text-base font-bold">באנר ראשי</h2>
-        <p className="text-xs text-gray-400 mt-1">התמונה המוצגת בראש דף הבית</p>
-      </div>
-      <div className="bg-white border border-gray-100 p-6">
-        {currentBanner && (
-          <div className="mb-5">
-            <p className="text-[10px] tracking-widest uppercase text-gray-300 mb-2">באנר נוכחי</p>
-            <img src={currentBanner} alt="banner" className="w-full max-h-48 object-cover border border-gray-100"
-              onError={e => e.target.style.display = 'none'} />
           </div>
         )}
-        <div onClick={() => fileRef.current?.click()}
-          className="border-2 border-dashed border-gray-200 hover:border-[#D4AF37] transition-colors cursor-pointer p-10 text-center">
-          {preview ? (
-            <><img src={preview} alt="preview" className="mx-auto max-h-40 object-contain mb-2" /><p className="text-xs text-[#D4AF37]">לחץ לבחירת תמונה אחרת</p></>
-          ) : (
-            <div className="flex flex-col items-center gap-2 text-gray-300">
-              <Upload size={28} />
-              <p className="text-sm font-medium text-gray-500">לחץ להעלאת באנר חדש</p>
-              <p className="text-xs">מומלץ: 1920×600px · JPG או PNG</p>
+
+        {/* Products Tab */}
+        {activeTab === 'products' && (
+          <div>
+            {/* Toolbar */}
+            <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', marginBottom: '20px', display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <button onClick={openAddModal} style={{ background: '#D4AF37', color: '#fff', border: 'none', padding: '14px 24px', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#B8941F'} onMouseOut={(e) => e.currentTarget.style.background = '#D4AF37'}>
+                <Plus size={20} /> הוסף מוצר חדש
+              </button>
+              
+              <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
+                <Search size={18} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
+                <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="חיפוש מוצר..." style={{ paddingRight: '40px', borderRadius: '4px' }} />
+              </div>
+
+              <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} style={{ minWidth: '180px', borderRadius: '4px' }}>
+                <option value="">כל הקטגוריות</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
             </div>
-          )}
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-        </div>
-        {uploading && (
-          <div className="mt-4 flex items-center justify-center gap-2 text-gray-400 text-sm">
-            <div className="w-4 h-4 border-2 border-gray-200 border-t-black rounded-full animate-spin" /> מעלה...
-          </div>
-        )}
-        <p className="text-xs text-gray-400 mt-4 p-3 bg-gray-50">💡 לאחר העלאה, רענן את דף הבית לראות את השינוי.</p>
-      </div>
-    </div>
-  );
-}
 
-// ─────────────────────────────────────────
-// Instagram Tab — NEW
-// ─────────────────────────────────────────
-function InstagramTab({ showToast }) {
-  const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const fileRef = useRef();
+            {/* Products Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+              {filteredProducts.map(product => (
+                <div key={product.id} style={{ background: '#fff', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'transform 0.2s', cursor: 'pointer', position: 'relative' }} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                  
+                  {product.is_featured && (
+                    <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10, background: '#D4AF37', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(212,175,55,0.4)' }}>
+                      ⭐
+                    </div>
+                  )}
 
-  useEffect(() => { fetchImages(); }, []);
-
-  async function fetchImages() {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.storage
-        .from('instagram')
-        .list('', { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
-      if (error) throw error;
-      const imgs = (data || [])
-        .filter(f => f.name && !f.name.startsWith('.') && f.name !== '.emptyFolderPlaceholder')
-        .map(f => ({
-          name: f.name,
-          url: `${supabaseUrl}/storage/v1/object/public/instagram/${f.name}`,
-          created_at: f.created_at,
-        }));
-      setImages(imgs);
-    } catch (err) {
-      showToast('שגיאה בטעינה: ' + err.message, 'error');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function uploadFiles(files) {
-    if (!files.length) return;
-    setUploading(true);
-    let successCount = 0;
-    try {
-      for (const file of files) {
-        const ext = file.name.split('.').pop().toLowerCase();
-        // שם קובץ: post1.jpg, post2.jpg וכו' — או timestamp
-        const fileName = `post${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
-        const { error } = await supabase.storage
-          .from('instagram')
-          .upload(fileName, file, { upsert: false, contentType: file.type });
-        if (!error) successCount++;
-      }
-      showToast(`${successCount} תמונות הועלו בהצלחה ✓`);
-      fetchImages();
-    } catch (err) {
-      showToast('שגיאה: ' + err.message, 'error');
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function deleteImage(name) {
-    if (!confirm(`למחוק את התמונה "${name}"?`)) return;
-    const { error } = await supabase.storage.from('instagram').remove([name]);
-    if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
-    showToast('נמחקה ✓');
-    fetchImages();
-  }
-
-  function handleDrop(e) {
-    e.preventDefault();
-    setDragOver(false);
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-    uploadFiles(files);
-  }
-
-  return (
-    <div>
-      {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-base font-bold">גלריית אינסטגרם</h2>
-        <p className="text-xs text-gray-400 mt-1">
-          התמונות שיוצגו בסקשן "עקבו אחרינו" בדף הבית · {images.length} תמונות
-        </p>
-      </div>
-
-      {/* הסבר מבנה */}
-      <div className="bg-amber-50 border border-amber-200 p-4 mb-6 text-right">
-        <p className="text-xs font-bold text-amber-800 mb-1">💡 איך זה עובד?</p>
-        <p className="text-xs text-amber-700">
-          תמונות שתעלי כאן יופיעו אוטומטית בסקשן האינסטגרם בדף הבית.
-          ניתן לבחור עד <strong>6 תמונות</strong> לתצוגה — הישנות ביותר יוסתרו.
-          לחצי על X למחיקת תמונה.
-        </p>
-      </div>
-
-      {/* אזור העלאה */}
-      <div
-        onClick={() => fileRef.current?.click()}
-        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
-        className={`border-2 border-dashed transition-colors cursor-pointer p-10 text-center mb-8
-          ${dragOver ? 'border-[#CFAA52] bg-amber-50' : 'border-gray-200 hover:border-[#CFAA52]'}`}
-      >
-        {uploading ? (
-          <div className="flex flex-col items-center gap-3 text-gray-400">
-            <div className="w-8 h-8 border-2 border-gray-200 border-t-[#CFAA52] rounded-full animate-spin" />
-            <p className="text-sm">מעלה תמונות...</p>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-2 text-gray-400">
-            <Upload size={32} />
-            <p className="text-base font-medium text-gray-600">לחצי להעלאת תמונות</p>
-            <p className="text-xs">או גררי תמונות לכאן · JPG, PNG, WEBP · ניתן לבחור מספר תמונות</p>
-          </div>
-        )}
-        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
-          onChange={e => uploadFiles(Array.from(e.target.files))} />
-      </div>
-
-      {/* גלריה */}
-      {loading ? (
-        <div className="text-center py-20 text-gray-300 text-sm">טוען...</div>
-      ) : images.length === 0 ? (
-        <div className="text-center py-20 text-gray-200 border-2 border-dashed border-gray-100">
-          <Instagram size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm text-gray-400">אין תמונות עדיין</p>
-          <p className="text-xs text-gray-300 mt-1">העלי תמונות למעלה כדי שיופיעו בדף הבית</p>
-        </div>
-      ) : (
-        <>
-          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-3">
-            תמונות קיימות ({images.length}) — 6 הראשונות יוצגו בדף הבית
-          </p>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-            {images.map((img, i) => (
-              <div key={img.name} className="relative group aspect-square">
-                {/* תג "מוצג" לראשונות */}
-                {i < 6 && (
-                  <div className="absolute top-1.5 right-1.5 z-10 bg-[#CFAA52] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-sm">
-                    {i + 1}
+                  <div style={{ width: '100%', height: '250px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {product.primary_image ? (
+                      <img src={product.primary_image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <ImageIcon size={60} color="#ccc" />
+                    )}
                   </div>
-                )}
-                <img
-                  src={img.url}
-                  alt={img.name}
-                  className={`w-full h-full object-cover border-2 transition-all
-                    ${i < 6 ? 'border-[#CFAA52]/60' : 'border-gray-100 opacity-60'}`}
-                />
-                {/* מחיקה */}
-                <button
-                  onClick={() => deleteImage(img.name)}
-                  className="absolute -top-1.5 -left-1.5 z-20 w-6 h-6 bg-red-500 text-white rounded-full
-                    flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+
+                  <div style={{ padding: '20px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', color: '#2D2420' }}>{product.name}</h3>
+                    <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>{product.category_name || 'ללא קטגוריה'}</p>
+                    
+                    {product.sale_price && (
+                      <div style={{ display: 'inline-block', background: '#D4AF37', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>
+                        🏷️ מבצע!
+                      </div>
+                    )}
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <div>
+                        {product.sale_price ? (
+                          <div>
+                            <span style={{ fontSize: '16px', color: '#999', textDecoration: 'line-through', marginLeft: '8px' }}>₪{product.price}</span>
+                            <span style={{ fontSize: '22px', fontWeight: '700', color: '#D4AF37' }}>₪{product.sale_price}</span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '20px', fontWeight: '700', color: '#2D2420' }}>₪{product.price}</span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '14px', color: '#666' }}>מלאי: {product.stock_quantity || 0}</span>
+                    </div>
+
+                    {product.engraving_available && (
+                      <div style={{ fontSize: '13px', color: '#4CAF50', marginBottom: '12px' }}>✓ חריטה אישית</div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                      <button onClick={() => openImagesModal(product)} style={{ flex: 1, padding: '8px', background: '#f5f5f5', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                        📷 {product.images_count} תמונות
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => openEditModal(product)} style={{ flex: 1, padding: '10px', background: '#D4AF37', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#B8941F'} onMouseOut={(e) => e.currentTarget.style.background = '#D4AF37'}>
+                        ערוך
+                      </button>
+                      <button onClick={() => handleDelete(product.id)} style={{ padding: '10px 16px', background: '#fff', color: '#dc2626', border: '1px solid #dc2626', borderRadius: '4px', cursor: 'pointer' }}>
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {filteredProducts.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: '#999' }}>
+                <p style={{ fontSize: '18px' }}>לא נמצאו מוצרים</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Categories Tab */}
+        {activeTab === 'categories' && (
+          <div>
+            <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '700' }}>ניהול קטגוריות</h2>
+                <button 
+                  onClick={openAddCategoryModal}
+                  style={{ background: '#D4AF37', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#B8941F'}
+                  onMouseOut={(e) => e.currentTarget.style.background = '#D4AF37'}
                 >
-                  <X size={11} />
+                  + הוסף קטגוריה
                 </button>
-                {/* שם קובץ */}
-                <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] text-center py-1 opacity-0 group-hover:opacity-100 transition-opacity truncate px-1">
-                  {img.name}
+              </div>
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {categories.map(cat => {
+                  const count = products.filter(p => p.category_id === cat.id).length;
+                  return (
+                    <div key={cat.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f9f9f9', borderRadius: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                        {cat.image_url && (
+                          <img src={cat.image_url} alt={cat.name} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
+                        )}
+                        <div>
+                          <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>{cat.name}</div>
+                          <div style={{ fontSize: '13px', color: '#666' }}>{count} מוצרים</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          onClick={() => openEditCategoryModal(cat)} 
+                          style={{ padding: '8px 16px', background: '#D4AF37', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                          ערוך
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCategory(cat.id)} 
+                          style={{ padding: '8px', background: '#fff', border: '1px solid #dc2626', color: '#dc2626', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Category Modal */}
+      {showCategoryModal && (
+        <div className="modal-overlay" onClick={() => { setShowCategoryModal(false); setEditingCategory(null); }}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '700' }}>{editingCategory ? 'עריכת קטגוריה' : 'הוספת קטגוריה חדשה'}</h2>
+              <button onClick={() => { setShowCategoryModal(false); setEditingCategory(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+
+            <form onSubmit={handleSaveCategory}>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>שם הקטגוריה *</label>
+                  <input 
+                    type="text" 
+                    value={categoryForm.name} 
+                    onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})} 
+                    placeholder="לדוגמה: מזוזות" 
+                    required 
+                    style={{ borderRadius: '4px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>תמונה ראשית</label>
+                  {editingCategory?.image_url && !categoryImageFile && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <img src={editingCategory.image_url} alt="Current" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '4px' }} />
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => setCategoryImageFile(e.target.files[0])} 
+                    style={{ padding: '8px' }} 
+                  />
+                  {!editingCategory && (
+                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>התמונה תופיע בעמוד הבית בסקשן "הקטגוריות שלנו"</div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                  <button type="submit" disabled={uploading} style={{ flex: 1, padding: '14px', background: '#D4AF37', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', fontWeight: '600', opacity: uploading ? 0.5 : 1 }}>
+                    {uploading ? 'שומר...' : (editingCategory ? 'שמור שינויים' : 'הוסף קטגוריה')}
+                  </button>
+                  <button type="button" onClick={() => { setShowCategoryModal(false); setEditingCategory(null); }} style={{ padding: '14px 24px', background: '#fff', color: '#2D2420', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontSize: '16px' }}>
+                    ביטול
+                  </button>
                 </div>
               </div>
-            ))}
+            </form>
           </div>
-        </>
+        </div>
+      )}
+
+      {/* Add/Edit Product Modal - ממשיך בהודעה הבאה עקב אורך */}
+      {(showAddModal || editingProduct) && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '700' }}>{editingProduct ? 'עריכת מוצר' : 'הוספת מוצר חדש'}</h2>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+
+            <form onSubmit={handleSaveProduct}>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>שם המוצר *</label>
+                  <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="לדוגמה: מזוזה אלומיניום שחור" required style={{ borderRadius: '4px' }} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>מחיר (₪) *</label>
+                    <input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} required style={{ borderRadius: '4px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>כמות במלאי</label>
+                    <input type="number" value={formData.stock_quantity} onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})} style={{ borderRadius: '4px' }} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>קטגוריה</label>
+                  <select value={formData.category_id} onChange={(e) => setFormData({...formData, category_id: e.target.value})} style={{ borderRadius: '4px' }}>
+                    <option value="">בחר קטגוריה</option>
+                    {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>תיאור</label>
+                  <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} rows="4" placeholder="תיאור מפורט של המוצר..." style={{ borderRadius: '4px' }}></textarea>
+                </div>
+
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={formData.engraving_available} onChange={(e) => setFormData({...formData, engraving_available: e.target.checked})} style={{ width: 'auto' }} />
+                    <span style={{ fontSize: '15px' }}>מאפשר חריטה אישית</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={formData.is_featured} onChange={(e) => setFormData({...formData, is_featured: e.target.checked})} style={{ width: 'auto' }} />
+                    <span style={{ fontSize: '15px' }}>⭐ מומלץ שלנו (יופיע בעמוד הבית)</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>מחיר מבצע (₪)</label>
+                  <input type="number" step="0.01" value={formData.sale_price} onChange={(e) => setFormData({...formData, sale_price: e.target.value})} placeholder="אם יש הנחה - הכנס מחיר אחרי הנחה" style={{ borderRadius: '4px' }} />
+                </div>
+
+                {!editingProduct && (
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>תמונה ראשית</label>
+                    <input type="file" accept="image/*" onChange={(e) => setNewImageFile(e.target.files[0])} style={{ padding: '8px' }} />
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                  <button type="submit" disabled={uploading} style={{ flex: 1, padding: '14px', background: '#D4AF37', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', fontWeight: '600', opacity: uploading ? 0.5 : 1 }}>
+                    {uploading ? 'שומר...' : (editingProduct ? 'שמור שינויים' : 'הוסף מוצר')}
+                  </button>
+                  <button type="button" onClick={closeModal} style={{ padding: '14px 24px', background: '#fff', color: '#2D2420', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontSize: '16px' }}>
+                    ביטול
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Images Modal */}
+      {showImagesModal && (
+        <div className="modal-overlay" onClick={() => setShowImagesModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '700' }}>ניהול תמונות - {showImagesModal.name}</h2>
+              <button onClick={() => setShowImagesModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <input type="file" accept="image/*" onChange={(e) => setNewImageFile(e.target.files[0])} style={{ marginBottom: '10px', borderRadius: '4px' }} />
+              <button onClick={addImage} disabled={!newImageFile || uploading} style={{ width: '100%', padding: '12px', background: '#D4AF37', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: (!newImageFile || uploading) ? 0.5 : 1 }}>
+                {uploading ? 'מעלה...' : 'הוסף תמונה'}
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+              {productImages.map(img => (
+                <div key={img.id} style={{ position: 'relative', border: img.is_primary ? '3px solid #D4AF37' : '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
+                  <img src={img.image_url} alt="" style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
+                  <div style={{ position: 'absolute', top: '4px', left: '4px' }}>
+                    <button onClick={() => deleteImage(img.id, img.image_url)} style={{ background: '#fff', border: 'none', padding: '6px', borderRadius: '4px', cursor: 'pointer' }}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  {img.is_primary ? (
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#D4AF37', color: '#fff', padding: '4px', fontSize: '11px', textAlign: 'center', fontWeight: '600' }}>ראשית</div>
+                  ) : (
+                    <button onClick={() => setPrimary(img.id)} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.95)', border: 'none', padding: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: '600' }}>הגדר ראשית</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
-}
+};
 
-// ─────────────────────────────────────────
-// Root
-// ─────────────────────────────────────────
-export default function AdminDashboard() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  useEffect(() => { if (localStorage.getItem('hiechal_admin_auth') === 'authenticated') setIsAuthenticated(true); }, []);
-  return isAuthenticated
-    ? <MainDashboard onLogout={() => { setIsAuthenticated(false); localStorage.removeItem('hiechal_admin_auth'); }} />
-    : <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
-}
+export default AdminDashboard;
