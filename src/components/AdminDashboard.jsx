@@ -1,27 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Plus, Trash2, Edit3, Save, X, Upload, Image as ImageIcon, Tag, LogOut, Eye, EyeOff, Search } from 'lucide-react';
+import { Plus, Trash2, X, LogOut, Eye, EyeOff, Search, Star, Settings, Image, Package, Tag, Award, Grid, MessageSquare, Percent, Bell, AlertTriangle, Edit, Upload } from 'lucide-react';
 
-// Supabase Configuration - ההיכל
 const supabaseUrl = 'https://taewbxptprdixsusvjfh.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhZXdieHB0cHJkaXhzdXN2amZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNDk0MjIsImV4cCI6MjA4NjgyNTQyMn0.TVgjzOt3UQW8FQVFk0Ze5Se2qOwS-WpqTSDHJlkIrFc';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// פרטי התחברות לדשבורד
 const ADMIN_USERNAME = 'heichal';
 const ADMIN_PASSWORD = 'heichal2026';
+
+const G = '#C9A84C';
+const BK = '#111111';
+const WH = '#FFFFFF';
+const BG = '#F8F7F4';
+const BR = '#E8E2D8';
+
+const btn = (bg, col, extra = {}) => ({
+  background: bg, color: col, border: 'none', padding: '10px 18px',
+  borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600',
+  fontFamily: '"Heebo",sans-serif', display: 'inline-flex', alignItems: 'center',
+  gap: '6px', ...extra
+});
+const inp = {
+  border: `1.5px solid ${BR}`, padding: '11px 14px', fontFamily: '"Heebo",sans-serif',
+  fontSize: '14px', width: '100%', borderRadius: '8px', outline: 'none', background: WH, color: BK
+};
+const card = { background: WH, borderRadius: '14px', border: `1px solid ${BR}` };
+
+const ENGRAVING_OPTIONS = [
+  { value: 'engraving', label: 'חריטה', icon: '✍️' },
+  { value: 'embroidery', label: 'רקמה', icon: '🧵' },
+  { value: 'embossing', label: 'הטבעה', icon: '🔏' },
+  { value: 'printing', label: 'הדפסה', icon: '🖨️' },
+];
 
 const AdminDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [logoUrl, setLogoUrl] = useState(null);
 
   useEffect(() => {
-    const authToken = localStorage.getItem('heichal_admin_auth');
-    if (authToken === 'authenticated') {
-      setIsAuthenticated(true);
-    }
+    if (localStorage.getItem('heichal_admin_auth') === 'authenticated') setIsAuthenticated(true);
+    // טעינת לוגו
+    const url = `${supabaseUrl}/storage/v1/object/public/banners/logo.png?t=${Date.now()}`;
+    setLogoUrl(url);
   }, []);
 
   const handleLogin = (e) => {
@@ -29,690 +53,1040 @@ const AdminDashboard = () => {
     if (loginForm.username === ADMIN_USERNAME && loginForm.password === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
       localStorage.setItem('heichal_admin_auth', 'authenticated');
-      setLoginError('');
-    } else {
-      setLoginError('שם משתמש או סיסמה שגויים');
-    }
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('heichal_admin_auth');
-    setLoginForm({ username: '', password: '' });
+    } else setLoginError('שם משתמש או סיסמה שגויים');
   };
 
   if (!isAuthenticated) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FEFDFB', fontFamily: '"Frank Ruhl Libre", "Heebo", sans-serif', direction: 'rtl', padding: '20px' }}>
-        <div style={{ width: '100%', maxWidth: '400px', background: '#fff', border: '2px solid #D4AF37', padding: '40px', borderRadius: '8px', boxShadow: '0 4px 20px rgba(212,175,55,0.15)' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '8px', textAlign: 'center', color: '#2D2420' }}>ההיכל</h1>
-          <p style={{ textAlign: 'center', color: '#666', fontSize: '14px', marginBottom: '32px' }}>ניהול מוצרים</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: BG, fontFamily: '"Heebo",sans-serif', direction: 'rtl', padding: '20px' }}>
+        <div style={{ width: '100%', maxWidth: '420px', ...card, padding: '40px 32px', boxShadow: '0 8px 40px rgba(0,0,0,0.08)' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            {logoUrl ? (
+              <img src={logoUrl} alt="לוגו" style={{ height: '60px', objectFit: 'contain', marginBottom: '12px' }}
+                onError={e => { e.target.style.display = 'none'; }} />
+            ) : (
+              <div style={{ width: '52px', height: '52px', background: BK, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                <span style={{ color: G, fontSize: '20px', fontWeight: '700' }}>✦</span>
+              </div>
+            )}
+            <div style={{ fontSize: '24px', fontWeight: '700', color: BK }}>ההיכל</div>
+            <div style={{ fontSize: '13px', color: '#999', marginTop: '4px' }}>מערכת ניהול</div>
+          </div>
           <form onSubmit={handleLogin}>
-            <div style={{ marginBottom: '20px' }}>
-              <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} style={{ width: '100%', padding: '14px', border: '1px solid #ddd', fontSize: '15px', borderRadius: '4px' }} placeholder="שם משתמש" />
-            </div>
-            <div style={{ marginBottom: '24px', position: 'relative' }}>
-              <input type={showPassword ? 'text' : 'password'} value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} style={{ width: '100%', padding: '14px', paddingLeft: '45px', border: '1px solid #ddd', fontSize: '15px', borderRadius: '4px' }} placeholder="סיסמה" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}>
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            <input type="text" value={loginForm.username} onChange={e => setLoginForm({...loginForm, username: e.target.value})} style={{...inp, marginBottom: '12px'}} placeholder="שם משתמש" />
+            <div style={{ position: 'relative', marginBottom: '20px' }}>
+              <input type={showPassword ? 'text' : 'password'} value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} style={{...inp, paddingLeft: '44px'}} placeholder="סיסמה" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#aaa' }}>
+                {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
               </button>
             </div>
-            {loginError && <div style={{ padding: '12px', background: '#ffe6e6', color: '#cc0000', marginBottom: '20px', fontSize: '14px', textAlign: 'center', borderRadius: '4px' }}>{loginError}</div>}
-            <button type="submit" style={{ width: '100%', padding: '14px', background: '#D4AF37', color: '#fff', border: 'none', fontSize: '16px', fontWeight: '600', cursor: 'pointer', borderRadius: '4px', transition: 'all 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#B8941F'} onMouseOut={(e) => e.currentTarget.style.background = '#D4AF37'}>כניסה</button>
+            {loginError && <div style={{ padding: '10px', background: '#fff5f5', color: '#dc2626', marginBottom: '16px', fontSize: '13px', textAlign: 'center', borderRadius: '8px', border: '1px solid #fecaca' }}>{loginError}</div>}
+            <button type="submit" style={{...btn(BK, WH), width: '100%', justifyContent: 'center', padding: '13px', fontSize: '15px'}}>כניסה</button>
           </form>
         </div>
       </div>
     );
   }
 
-  return <MainDashboard onLogout={handleLogout} />;
+  return <MainDashboard onLogout={() => { setIsAuthenticated(false); localStorage.removeItem('heichal_admin_auth'); }} logoUrl={logoUrl} setLogoUrl={setLogoUrl} />;
 };
 
-const MainDashboard = ({ onLogout }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
+  const [tab, setTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [coupons, setCoupons] = useState([]);
+  const [popup, setPopup] = useState({ is_active: false, title: '', message: '', button_text: 'סגור', image_url: null });
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  
-  // Modal states
+  const [filterCat, setFilterCat] = useState('');
+  const [openParents, setOpenParents] = useState({});
+  const [selCatPanel, setSelCatPanel] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(`${supabaseUrl}/storage/v1/object/public/banners/banner.png?t=${Date.now()}`);
+  const [bannerFile, setBannerFile] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(logoUrl);
+  const [popupImageFile, setPopupImageFile] = useState(null);
+  const [popupImagePreview, setPopupImagePreview] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Modals
+  const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showImagesModal, setShowImagesModal] = useState(null);
   const [showColorsModal, setShowColorsModal] = useState(null);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [categoryForm, setCategoryForm] = useState({ name: '', display_order: 0 });
-  const [categoryImageFile, setCategoryImageFile] = useState(null);
-  
-  // Form data
-  const [formData, setFormData] = useState({
-    name: '',
-    price: '',
-    description: '',
-    category_id: '',
-    stock_quantity: 0,
-    engraving_available: false,
-    is_featured: false,
-    on_sale: false,
-    sale_type: 'percentage',
-    sale_percentage: '',
-    sale_price: ''
+  const [showCatModal, setShowCatModal] = useState(false);
+  const [editingCat, setEditingCat] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState(null);
+
+  const [catForm, setCatForm] = useState({ name: '', is_parent: false, parent_id: '' });
+  const [catImageFile, setCatImageFile] = useState(null);
+  const [reviewForm, setReviewForm] = useState({ text: '', stars: 5 });
+  const [couponForm, setCouponForm] = useState({ code: '', discount_type: 'percentage', discount_value: '', min_order: '', is_active: true, expires_at: '' });
+
+  const [productForm, setProductForm] = useState({
+    name: '', price: '', description: '', category_id: '',
+    stock_quantity: 0, allows_engraving: false, engraving_types: [],
+    is_featured: false, on_sale: false, sale_type: 'percentage',
+    sale_percentage: '', sale_price: '', dimensions: '', material: ''
   });
-  
-  // Image/Color states
+
   const [productImages, setProductImages] = useState([]);
   const [productColors, setProductColors] = useState([]);
   const [newImageFile, setNewImageFile] = useState(null);
   const [newColor, setNewColor] = useState({ name: '', code: '' });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadAll(); }, []);
 
-  const loadData = async () => {
+  useEffect(() => {
+    if (popup.image_url) setPopupImagePreview(popup.image_url);
+  }, [popup.image_url]);
+
+  const loadAll = async () => {
     setLoading(true);
     try {
-      const [productsRes, categoriesRes] = await Promise.all([
-        supabase.from('products').select(`*, categories(name), product_images(image_url, is_primary)`).eq('is_active', true).order('created_at', { ascending: false }),
-        supabase.from('categories').select('*').order('display_order')
+      const [pRes, cRes, rRes, cpRes, ppRes] = await Promise.all([
+        supabase.from('products').select(`*, categories(name), product_images(image_url, is_primary), product_colors(id)`).order('created_at', { ascending: false }),
+        supabase.from('categories').select('*').order('display_order'),
+        supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
+        supabase.from('coupons').select('*').order('created_at', { ascending: false }),
+        supabase.from('popup_settings').select('*').limit(1).single()
       ]);
-      
-      if (productsRes.data) {
-        setProducts(productsRes.data.map(p => ({
-          ...p,
-          category_name: p.categories?.name || '',
-          primary_image: p.product_images?.find(i => i.is_primary)?.image_url || p.product_images?.[0]?.image_url,
-          images_count: p.product_images?.length || 0
-        })));
-      }
-      
-      if (categoriesRes.data) setCategories(categoriesRes.data);
-    } catch (error) {
-      console.error('Error:', error);
-    }
+      if (pRes.data) setProducts(pRes.data.map(p => ({
+        ...p,
+        category_name: p.categories?.name || '',
+        primary_image: p.product_images?.find(i => i.is_primary)?.image_url || p.product_images?.[0]?.image_url,
+        images_count: p.product_images?.length || 0,
+        colors_count: p.product_colors?.length || 0
+      })));
+      if (cRes.data) setCategories(cRes.data);
+      if (rRes.data) setReviews(rRes.data);
+      if (cpRes.data) setCoupons(cpRes.data);
+      if (ppRes.data) setPopup(ppRes.data);
+    } catch (e) { console.error(e); }
     setLoading(false);
   };
 
-  const uploadImage = async (file, bucket = 'product-images') => {
+  const upload = async (file, bucket = 'product-images', fileName = null) => {
     if (!file) return null;
-    try {
-      setUploading(true);
-      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${file.name.split('.').pop()}`;
-      const { error } = await supabase.storage.from(bucket).upload(fileName, file);
-      if (error) throw error;
-      const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
-      setUploading(false);
-      return data.publicUrl;
-    } catch (error) {
-      console.error('Upload error:', error);
-      setUploading(false);
-      return null;
-    }
+    setUploading(true);
+    const name = fileName || `${Date.now()}-${Math.random().toString(36).slice(2)}.${file.name.split('.').pop()}`;
+    const { error } = await supabase.storage.from(bucket).upload(name, file, { upsert: true });
+    if (error) { setUploading(false); return null; }
+    const { data } = supabase.storage.from(bucket).getPublicUrl(name);
+    setUploading(false);
+    return data.publicUrl;
   };
 
-  const handleSaveCategory = async (e) => {
+  // ── PRODUCTS ──
+  const saveProduct = async (e) => {
     e.preventDefault();
-    if (!categoryForm.name.trim()) {
-      alert('אנא הזן שם קטגוריה');
-      return;
+    if (!productForm.name || !productForm.price) { alert('שם ומחיר חובה'); return; }
+    let salePrice = null;
+    if (productForm.on_sale) {
+      if (productForm.sale_type === 'percentage' && productForm.sale_percentage)
+        salePrice = parseFloat(productForm.price) * (1 - parseFloat(productForm.sale_percentage) / 100);
+      else if (productForm.sale_type === 'fixed' && productForm.sale_price)
+        salePrice = parseFloat(productForm.sale_price);
     }
-
+    const data = {
+      name: productForm.name, price: parseFloat(productForm.price),
+      description: productForm.description, category_id: productForm.category_id || null,
+      stock_quantity: parseInt(productForm.stock_quantity) || 0,
+      allows_engraving: productForm.allows_engraving,
+      engraving_type: productForm.allows_engraving && productForm.engraving_types.length > 0
+        ? productForm.engraving_types
+        : null,
+      is_featured: productForm.is_featured, on_sale: productForm.on_sale,
+      sale_type: productForm.on_sale ? productForm.sale_type : null,
+      sale_percentage: productForm.on_sale && productForm.sale_type === 'percentage' ? parseInt(productForm.sale_percentage) : null,
+      sale_price: salePrice,
+      dimensions: productForm.dimensions || null,
+      material: productForm.material || null
+    };
     try {
-      let imageUrl = editingCategory?.image_url || null;
-      
-      if (categoryImageFile) {
-        imageUrl = await uploadImage(categoryImageFile, 'product-images');
-      }
-
-      if (editingCategory) {
-        await supabase.from('categories').update({
-          name: categoryForm.name.trim(),
-          image_url: imageUrl
-        }).eq('id', editingCategory.id);
-        alert('הקטגוריה עודכנה!');
-      } else {
-        const maxOrder = categories.length > 0 ? Math.max(...categories.map(c => c.display_order || 0)) : 0;
-        await supabase.from('categories').insert([{
-          name: categoryForm.name.trim(),
-          display_order: maxOrder + 1,
-          image_url: imageUrl
-        }]);
-        alert('הקטגוריה נוספה!');
-      }
-
-      setCategoryForm({ name: '', display_order: 0 });
-      setCategoryImageFile(null);
-      setShowCategoryModal(false);
-      setEditingCategory(null);
-      await loadData();
-    } catch (error) {
-      console.error('Error:', error);
-      alert('שגיאה בשמירת קטגוריה');
-    }
-  };
-
-  const handleDeleteCategory = async (categoryId) => {
-    if (!confirm('למחוק את הקטגוריה? כל המוצרים בקטגוריה זו יאבדו את הקטגוריה שלהם.')) return;
-    
-    try {
-      await supabase.from('categories').delete().eq('id', categoryId);
-      alert('הקטגוריה נמחקה!');
-      await loadData();
-    } catch (error) {
-      console.error('Error:', error);
-      alert('שגיאה במחיקה');
-    }
-  };
-
-  const openEditCategoryModal = (category) => {
-    setEditingCategory(category);
-    setCategoryForm({
-      name: category.name,
-      display_order: category.display_order || 0
-    });
-    setCategoryImageFile(null);
-    setShowCategoryModal(true);
-  };
-
-  const openAddCategoryModal = () => {
-    setEditingCategory(null);
-    setCategoryForm({ name: '', display_order: 0 });
-    setCategoryImageFile(null);
-    setShowCategoryModal(true);
-  };
-
-  const handleSaveProduct = async (e) => {
-    e.preventDefault();
-    if (!formData.name || !formData.price) {
-      alert('אנא מלא שם ומחיר');
-      return;
-    }
-
-    try {
-      let finalSalePrice = null;
-      if (formData.on_sale) {
-        if (formData.sale_type === 'percentage' && formData.sale_percentage) {
-          const discount = (parseFloat(formData.price) * parseFloat(formData.sale_percentage)) / 100;
-          finalSalePrice = parseFloat(formData.price) - discount;
-        } else if (formData.sale_type === 'fixed' && formData.sale_price) {
-          finalSalePrice = parseFloat(formData.sale_price);
-        }
-      }
-
       if (editingProduct) {
-        await supabase.from('products').update({
-          name: formData.name,
-          price: parseFloat(formData.price),
-          description: formData.description,
-          category_id: formData.category_id || null,
-          stock_quantity: parseInt(formData.stock_quantity) || 0,
-          engraving_available: formData.engraving_available,
-          is_featured: formData.is_featured,
-          sale_price: finalSalePrice
-        }).eq('id', editingProduct.id);
-        
-        alert('המוצר עודכן!');
+        await supabase.from('products').update(data).eq('id', editingProduct.id);
       } else {
-        const { data: newProduct, error } = await supabase.from('products').insert([{
-          name: formData.name,
-          price: parseFloat(formData.price),
-          description: formData.description,
-          category_id: formData.category_id || null,
-          stock_quantity: parseInt(formData.stock_quantity) || 0,
-          engraving_available: formData.engraving_available,
-          is_featured: formData.is_featured,
-          sale_price: finalSalePrice,
-          is_active: true
-        }]).select().single();
-
+        const { data: np, error } = await supabase.from('products').insert([{ ...data, is_active: true }]).select().single();
         if (error) throw error;
-
         if (newImageFile) {
-          const imageUrl = await uploadImage(newImageFile);
-          if (imageUrl) {
-            await supabase.from('product_images').insert([{
-              product_id: newProduct.id,
-              image_url: imageUrl,
-              is_primary: true,
-              display_order: 0
-            }]);
-          }
-        }
-        
-        alert('המוצר נוסף!');
-      }
-
-      await loadData();
-      closeModal();
-    } catch (error) {
-      console.error('Error:', error);
-      alert('שגיאה: ' + error.message);
-    }
-  };
-
-  const handleDelete = async (productId) => {
-    if (!confirm('למחוק את המוצר?')) return;
-    
-    try {
-      const { data: images } = await supabase.from('product_images').select('image_url').eq('product_id', productId);
-      if (images) {
-        for (const img of images) {
-          const fileName = img.image_url.split('/').pop();
-          await supabase.storage.from('product-images').remove([fileName]);
+          const url = await upload(newImageFile);
+          if (url) await supabase.from('product_images').insert([{ product_id: np.id, image_url: url, is_primary: true, display_order: 0 }]);
         }
       }
-      
-      await supabase.from('product_images').delete().eq('product_id', productId);
-      await supabase.from('products').delete().eq('id', productId);
-      
-      await loadData();
-      alert('המוצר נמחק!');
-    } catch (error) {
-      console.error('Error:', error);
-      alert('שגיאה במחיקה');
-    }
+      await loadAll();
+      closeProductModal();
+    } catch (e) { alert('שגיאה: ' + e.message); }
   };
 
-  const openEditModal = (product) => {
+  const deleteProduct = async (id) => {
+    if (!confirm('למחוק?')) return;
+    const { data: imgs } = await supabase.from('product_images').select('image_url').eq('product_id', id);
+    if (imgs) for (const i of imgs) await supabase.storage.from('product-images').remove([i.image_url.split('/').pop()]);
+    await supabase.from('product_images').delete().eq('product_id', id);
+    await supabase.from('product_colors').delete().eq('product_id', id);
+    await supabase.from('products').delete().eq('id', id);
+    await loadAll();
+  };
+
+  const toggleFeatured = async (p) => {
+    await supabase.from('products').update({ is_featured: !p.is_featured }).eq('id', p.id);
+    await loadAll();
+  };
+
+  const openProductModal = (product = null, prefillCat = '') => {
     setEditingProduct(product);
-    setFormData({
-      name: product.name,
-      price: product.price,
-      description: product.description || '',
-      category_id: product.category_id || '',
-      stock_quantity: product.stock_quantity || 0,
-      engraving_available: product.engraving_available || false,
-      is_featured: product.is_featured || false,
-      sale_price: product.sale_price || ''
-    });
-  };
-
-  const openAddModal = () => {
-    setShowAddModal(true);
-    setEditingProduct(null);
-    setFormData({
-      name: '',
-      price: '',
-      description: '',
-      category_id: '',
-      stock_quantity: 0,
-      engraving_available: false,
-      is_featured: false,
-      sale_price: ''
+    setProductForm(product ? {
+      name: product.name, price: product.price, description: product.description || '',
+      category_id: product.category_id || '', stock_quantity: product.stock_quantity || 0,
+      allows_engraving: product.allows_engraving || false,
+      engraving_types: Array.isArray(product.engraving_type) ? product.engraving_type : (product.engraving_type ? [product.engraving_type] : []),
+      is_featured: product.is_featured || false, on_sale: product.on_sale || false,
+      sale_type: product.sale_type || 'percentage', sale_percentage: product.sale_percentage || '',
+      sale_price: product.sale_price || '', dimensions: product.dimensions || '', material: product.material || ''
+    } : {
+      name: '', price: '', description: '', category_id: prefillCat,
+      stock_quantity: 0, allows_engraving: false, engraving_types: [],
+      is_featured: false, on_sale: false, sale_type: 'percentage',
+      sale_percentage: '', sale_price: '', dimensions: '', material: ''
     });
     setNewImageFile(null);
+    setShowProductModal(true);
   };
 
-  const closeModal = () => {
-    setEditingProduct(null);
-    setShowAddModal(false);
-    setNewImageFile(null);
+  const closeProductModal = () => { setShowProductModal(false); setEditingProduct(null); setNewImageFile(null); };
+
+  const toggleEngravingType = (val) => {
+    const types = productForm.engraving_types || [];
+    if (types.includes(val)) {
+      setProductForm({...productForm, engraving_types: types.filter(t => t !== val)});
+    } else {
+      setProductForm({...productForm, engraving_types: [...types, val]});
+    }
   };
 
-  const openImagesModal = async (product) => {
-    setShowImagesModal(product);
-    const { data } = await supabase.from('product_images').select('*').eq('product_id', product.id).order('display_order');
+  // ── IMAGES ──
+  const openImagesModal = async (p) => {
+    setShowImagesModal(p);
+    const { data } = await supabase.from('product_images').select('*').eq('product_id', p.id).order('display_order');
     setProductImages(data || []);
   };
-
   const addImage = async () => {
-    if (!newImageFile || !showImagesModal) return;
-    
-    const imageUrl = await uploadImage(newImageFile);
-    if (!imageUrl) return;
-
-    await supabase.from('product_images').insert([{
-      product_id: showImagesModal.id,
-      image_url: imageUrl,
-      is_primary: productImages.length === 0,
-      display_order: productImages.length
-    }]);
-
+    if (!newImageFile) return;
+    const url = await upload(newImageFile);
+    if (!url) return;
+    await supabase.from('product_images').insert([{ product_id: showImagesModal.id, image_url: url, is_primary: productImages.length === 0, display_order: productImages.length }]);
     const { data } = await supabase.from('product_images').select('*').eq('product_id', showImagesModal.id);
-    setProductImages(data || []);
-    setNewImageFile(null);
-    await loadData();
+    setProductImages(data || []); setNewImageFile(null); await loadAll();
   };
-
-  const deleteImage = async (imageId, imageUrl) => {
-    if (!confirm('למחוק תמונה?')) return;
-    
-    const fileName = imageUrl.split('/').pop();
-    await supabase.storage.from('product-images').remove([fileName]);
-    await supabase.from('product_images').delete().eq('id', imageId);
-    
+  const deleteImage = async (imgId, imgUrl) => {
+    if (!confirm('למחוק?')) return;
+    await supabase.storage.from('product-images').remove([imgUrl.split('/').pop()]);
+    await supabase.from('product_images').delete().eq('id', imgId);
     const { data } = await supabase.from('product_images').select('*').eq('product_id', showImagesModal.id);
-    setProductImages(data || []);
-    await loadData();
+    setProductImages(data || []); await loadAll();
   };
-
-  const setPrimary = async (imageId) => {
+  const setPrimary = async (imgId) => {
     await supabase.from('product_images').update({ is_primary: false }).eq('product_id', showImagesModal.id);
-    await supabase.from('product_images').update({ is_primary: true }).eq('id', imageId);
-    
+    await supabase.from('product_images').update({ is_primary: true }).eq('id', imgId);
     const { data } = await supabase.from('product_images').select('*').eq('product_id', showImagesModal.id);
-    setProductImages(data || []);
-    await loadData();
+    setProductImages(data || []); await loadAll();
   };
 
-  const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || p.category_id === selectedCategory;
-    return matchesSearch && matchesCategory;
+  // ── COLORS ──
+  const openColorsModal = async (p) => {
+    setShowColorsModal(p);
+    const { data } = await supabase.from('product_colors').select('*').eq('product_id', p.id).order('display_order');
+    setProductColors(data || []);
+  };
+  const addColor = async () => {
+    if (!newColor.name || !newColor.code) { alert('מלא שם וקוד'); return; }
+    let c = newColor.code.trim();
+    if (!c.startsWith('#')) c = '#' + c;
+    await supabase.from('product_colors').insert([{ product_id: showColorsModal.id, color_name: newColor.name, color_code: c.toLowerCase(), display_order: productColors.length }]);
+    const { data } = await supabase.from('product_colors').select('*').eq('product_id', showColorsModal.id);
+    setProductColors(data || []); setNewColor({ name: '', code: '' }); await loadAll();
+  };
+  const deleteColor = async (id) => {
+    if (!confirm('למחוק?')) return;
+    await supabase.from('product_colors').delete().eq('id', id);
+    const { data } = await supabase.from('product_colors').select('*').eq('product_id', showColorsModal.id);
+    setProductColors(data || []); await loadAll();
+  };
+
+  // ── CATEGORIES ──
+  const saveCat = async (e) => {
+    e.preventDefault();
+    if (!catForm.name.trim()) { alert('שם חובה'); return; }
+    let imageUrl = editingCat?.image_url || null;
+    if (catImageFile) imageUrl = await upload(catImageFile);
+    const data = { 
+      name: catForm.name.trim(), 
+      slug: `category-${Date.now()}`,
+      image_url: imageUrl, 
+      is_parent: catForm.is_parent, 
+      parent_id: catForm.parent_id || null 
+    };
+    if (editingCat) {
+      await supabase.from('categories').update(data).eq('id', editingCat.id);
+    } else {
+      const maxOrder = categories.length > 0 ? Math.max(...categories.map(c => c.display_order || 0)) : 0;
+      await supabase.from('categories').insert([{ ...data, display_order: maxOrder + 1 }]);
+    }
+    setCatForm({ name: '', is_parent: false, parent_id: '' }); setCatImageFile(null);
+    setShowCatModal(false); setEditingCat(null); await loadAll();
+  };
+  const deleteCat = async (id) => { if (!confirm('למחוק?')) return; await supabase.from('categories').delete().eq('id', id); await loadAll(); };
+  const openEditCat = (cat) => { setEditingCat(cat); setCatForm({ name: cat.name, is_parent: cat.is_parent || false, parent_id: cat.parent_id || '' }); setCatImageFile(null); setShowCatModal(true); };
+
+  // ── REVIEWS ──
+  const saveReview = async (e) => {
+    e.preventDefault();
+    if (!reviewForm.text.trim()) return;
+    if (editingReview) await supabase.from('testimonials').update({ text: reviewForm.text, stars: reviewForm.stars }).eq('id', editingReview.id);
+    else await supabase.from('testimonials').insert([{ text: reviewForm.text, stars: reviewForm.stars }]);
+    setReviewForm({ text: '', stars: 5 }); setShowReviewModal(false); setEditingReview(null); await loadAll();
+  };
+  const deleteReview = async (id) => { if (!confirm('למחוק?')) return; await supabase.from('testimonials').delete().eq('id', id); await loadAll(); };
+
+  // ── COUPONS ──
+  const saveCoupon = async (e) => {
+    e.preventDefault();
+    if (!couponForm.code || !couponForm.discount_value) { alert('קוד וערך הנחה חובה'); return; }
+    const data = { code: couponForm.code.toUpperCase(), discount_type: couponForm.discount_type, discount_value: parseFloat(couponForm.discount_value), min_order: parseFloat(couponForm.min_order) || 0, is_active: couponForm.is_active, expires_at: couponForm.expires_at || null };
+    if (editingCoupon) await supabase.from('coupons').update(data).eq('id', editingCoupon.id);
+    else await supabase.from('coupons').insert([data]);
+    setCouponForm({ code: '', discount_type: 'percentage', discount_value: '', min_order: '', is_active: true, expires_at: '' });
+    setShowCouponModal(false); setEditingCoupon(null); await loadAll();
+  };
+  const deleteCoupon = async (id) => { if (!confirm('למחוק?')) return; await supabase.from('coupons').delete().eq('id', id); await loadAll(); };
+  const toggleCoupon = async (c) => { await supabase.from('coupons').update({ is_active: !c.is_active }).eq('id', c.id); await loadAll(); };
+
+  // ── POPUP ──
+  const savePopup = async () => {
+    try {
+      let imageUrl = popup.image_url || null;
+      if (popupImageFile) {
+        imageUrl = await upload(popupImageFile, 'popup', 'popup-image.png');
+      }
+      await supabase.from('popup_settings').update({
+        is_active: popup.is_active,
+        title: popup.title,
+        message: popup.message,
+        button_text: popup.button_text,
+        image_url: imageUrl
+      }).eq('id', popup.id);
+      setPopup(prev => ({ ...prev, image_url: imageUrl }));
+      alert('הפופ-אפ עודכן!');
+    } catch (e) {
+      alert('שגיאה בשמירה');
+    }
+  };
+
+  // ── BANNER & LOGO ──
+  const uploadBanner = async () => {
+    if (!bannerFile) return;
+    setUploading(true);
+    await supabase.storage.from('banners').remove(['banner.png']);
+    const { error } = await supabase.storage.from('banners').upload('banner.png', bannerFile, { upsert: true });
+    setUploading(false);
+    if (error) { alert('שגיאה'); return; }
+    alert('הבאנר עודכן!');
+    setBannerFile(null);
+    setBannerPreview(`${supabaseUrl}/storage/v1/object/public/banners/banner.png?t=${Date.now()}`);
+  };
+
+  const uploadLogo = async () => {
+    if (!logoFile) return;
+    const url = await upload(logoFile, 'banners', 'logo.png');
+    if (url) {
+      const newUrl = `${url}?t=${Date.now()}`;
+      setLogoUrl(newUrl);
+      setLogoPreview(newUrl);
+      setLogoFile(null);
+      alert('הלוגו עודכן!');
+    }
+  };
+
+  const filtered = products.filter(p => {
+    const s = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const c = !filterCat || p.category_id?.toString() === filterCat;
+    return s && c;
   });
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FEFDFB' }}>
-        <div style={{ fontSize: '18px', color: '#D4AF37', fontWeight: '600' }}>טוען...</div>
+  const parentCats = categories.filter(c => c.is_parent);
+  const regularCats = categories.filter(c => !c.is_parent && !c.parent_id);
+  const subCats = (pid) => categories.filter(c => c.parent_id?.toString() === pid?.toString());
+  const featured = products.filter(p => p.is_featured);
+
+  const TABS = [
+    { id: 'overview', label: 'סקירה', icon: <Grid size={15}/> },
+    { id: 'products', label: 'מוצרים', icon: <Package size={15}/> },
+    { id: 'featured', label: 'מומלצים', icon: <Star size={15}/> },
+    { id: 'categories', label: 'קטגוריות', icon: <Tag size={15}/> },
+    { id: 'reviews', label: 'המלצות', icon: <MessageSquare size={15}/> },
+    { id: 'coupons', label: 'קופונים', icon: <Percent size={15}/> },
+    { id: 'popup', label: 'פופ-אפ', icon: <Bell size={15}/> },
+    { id: 'banner', label: 'באנר/לוגו', icon: <Image size={15}/> },
+    { id: 'settings', label: 'הגדרות', icon: <Settings size={15}/> },
+  ];
+
+  if (loading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: BG }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: '44px', height: '44px', border: `3px solid ${BR}`, borderTopColor: G, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }}></div>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        <div style={{ color: '#999', fontSize: '14px', fontFamily: '"Heebo",sans-serif' }}>טוען...</div>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FEFDFB', fontFamily: '"Frank Ruhl Libre", "Heebo", sans-serif', direction: 'rtl' }}>
+    <div style={{ minHeight: '100vh', background: BG, fontFamily: '"Heebo",sans-serif', direction: 'rtl' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;600;700&family=Heebo:wght@300;400;500;600;700&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        input, select, textarea { border: 1px solid #ddd; padding: 12px; font-family: 'Heebo', sans-serif; font-size: 15px; width: 100%; borderRadius: 4px; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #D4AF37; }
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal { background: #fff; border-radius: 8px; padding: 30px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; }
-        @media (max-width: 768px) { .modal { padding: 20px; } }
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        input,select,textarea{font-family:"Heebo",sans-serif}
+        input:focus,select:focus,textarea:focus{outline:2px solid ${G};outline-offset:-1px}
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+        .modal{background:#fff;border-radius:18px;padding:28px;max-width:620px;width:100%;max-height:92vh;overflow-y:auto}
+        .pcard{transition:transform 0.15s,box-shadow 0.15s}
+        .pcard:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+        .tabBtn{transition:all 0.15s}
+        .tabBtn:hover{background:#f0ece3 !important}
+        .arrow{display:inline-block;transition:transform 0.2s;font-size:10px;color:${G}}
+        .arrow.open{transform:rotate(90deg)}
+        @media(max-width:768px){
+          .modal{padding:20px;border-radius:14px}
+          .hide-mobile{display:none!important}
+          .mobile-full{width:100%!important}
+        }
       `}</style>
 
-      {/* Header */}
-      <div style={{ background: '#fff', borderBottom: '2px solid #D4AF37', padding: '20px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#2D2420', marginBottom: '4px' }}>ההיכל</h1>
-            <p style={{ fontSize: '14px', color: '#666' }}>ניהול מוצרים ותשמישי קדושה</p>
+      {/* ── HEADER ── */}
+      <div style={{ background: BK, borderBottom: `2px solid ${G}`, padding: '0 20px', position: 'sticky', top: 0, zIndex: 200 }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '56px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {logoUrl ? (
+              <img src={logoUrl} alt="לוגו" style={{ height: '36px', objectFit: 'contain' }}
+                onError={e => e.target.style.display = 'none'} />
+            ) : (
+              <div style={{ width: '32px', height: '32px', background: G, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', color: BK }}>✦</div>
+            )}
+            <span style={{ color: WH, fontSize: '15px', fontWeight: '700' }}>ההיכל</span>
+            <span style={{ color: '#555', fontSize: '11px' }} className="hide-mobile">/ ניהול</span>
           </div>
-          <button onClick={onLogout} style={{ background: '#D4AF37', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#B8941F'} onMouseOut={(e) => e.currentTarget.style.background = '#D4AF37'}>
-            <LogOut size={16} /> יציאה
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Mobile menu button */}
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{ display: 'none', background: 'none', border: 'none', color: WH, cursor: 'pointer', padding: '4px' }}
+              className="mobile-menu-btn">
+              ☰
+            </button>
+            <button onClick={onLogout} style={{ ...btn('#222', '#aaa'), fontSize: '12px', padding: '7px 12px' }}>
+              <LogOut size={13}/> יציאה
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #eee' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '0' }}>
-          {['overview', 'products', 'categories'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                padding: '16px 24px',
-                background: 'none',
-                border: 'none',
-                borderBottom: activeTab === tab ? '3px solid #D4AF37' : '3px solid transparent',
-                color: activeTab === tab ? '#D4AF37' : '#666',
-                fontWeight: activeTab === tab ? '600' : '400',
-                fontSize: '15px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              {tab === 'overview' && 'סקירה כללית'}
-              {tab === 'products' && 'מוצרים'}
-              {tab === 'categories' && 'קטגוריות'}
+      {/* ── TABS ── */}
+      <div style={{ background: WH, borderBottom: `1px solid ${BR}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', padding: '0 16px', minWidth: 'max-content' }}>
+          {TABS.map(t => (
+            <button key={t.id} className="tabBtn" onClick={() => { setTab(t.id); setMobileMenuOpen(false); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '12px 14px', background: 'none', border: 'none', borderBottom: tab === t.id ? `3px solid ${G}` : '3px solid transparent', color: tab === t.id ? BK : '#888', fontWeight: tab === t.id ? '700' : '400', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: '"Heebo",sans-serif' }}>
+              <span style={{ color: tab === t.id ? G : '#ccc' }}>{t.icon}</span>
+              {t.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '30px 20px' }}>
-        
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div>
-            {/* Statistics */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-              <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(212,175,55,0.1)', border: '1px solid #D4AF37' }}>
-                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>סה"כ מוצרים</div>
-                <div style={{ fontSize: '32px', fontWeight: '700', color: '#D4AF37' }}>{products.length}</div>
-              </div>
-              <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>קטגוריות</div>
-                <div style={{ fontSize: '32px', fontWeight: '700' }}>{categories.length}</div>
-              </div>
-              <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>מוצרים מומלצים</div>
-                <div style={{ fontSize: '32px', fontWeight: '700' }}>{products.filter(p => p.is_featured).length}</div>
-              </div>
-              <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>מוצרים במבצע</div>
-                <div style={{ fontSize: '32px', fontWeight: '700' }}>{products.filter(p => p.sale_price).length}</div>
-              </div>
-            </div>
+      {/* ── CONTENT ── */}
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px 16px' }}>
 
-            {/* Categories Overview */}
-            <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '20px' }}>קטגוריות</h2>
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {categories.map(cat => {
-                  const count = products.filter(p => p.category_id === cat.id).length;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        setSelectedCategory(cat.id.toString());
-                        setActiveTab('products');
-                      }}
-                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f9f9f9', borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'right' }}
-                      onMouseOver={(e) => e.currentTarget.style.background = '#FFF8E7'}
-                      onMouseOut={(e) => e.currentTarget.style.background = '#f9f9f9'}
-                    >
-                      <span style={{ fontSize: '15px', fontWeight: '500' }}>{cat.name}</span>
-                      <span style={{ fontSize: '14px', color: '#666' }}>{count} מוצרים</span>
-                    </button>
-                  );
-                })}
+        {/* OVERVIEW */}
+        {tab === 'overview' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: '12px', marginBottom: '24px' }}>
+              {[
+                { label: 'מוצרים', val: products.length, icon: <Package size={20} color={G}/>, sub: 'פעילים' },
+                { label: 'קטגוריות', val: categories.filter(c=>!c.is_parent).length, icon: <Tag size={20} color={G}/>, sub: 'עם מוצרים' },
+                { label: 'מומלצים', val: featured.length, icon: <Star size={20} color={G}/>, sub: 'בעמוד הבית' },
+                { label: 'במבצע', val: products.filter(p=>p.on_sale).length, icon: <Percent size={20} color={G}/>, sub: 'עם הנחה' },
+                { label: 'ללא תמונה', val: products.filter(p=>!p.primary_image).length, icon: <AlertTriangle size={20} color={products.filter(p=>!p.primary_image).length > 0 ? '#f59e0b' : G}/>, sub: 'לתשומת לב' },
+                { label: 'המלצות', val: reviews.length, icon: <MessageSquare size={20} color={G}/>, sub: 'ביקורות' },
+                { label: 'קופונים', val: coupons.filter(c=>c.is_active).length, icon: <Award size={20} color={G}/>, sub: 'פעילים' },
+              ].map((s,i) => (
+                <div key={i} style={{ ...card, padding: '16px 18px' }}>
+                  <div style={{ marginBottom: '8px' }}>{s.icon}</div>
+                  <div style={{ fontSize: '26px', fontWeight: '700', color: BK, lineHeight: 1 }}>{s.val}</div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: BK, marginTop: '5px' }}>{s.label}</div>
+                  <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px' }}>{s.sub}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ ...card, padding: '20px' }}>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: BK, marginBottom: '12px' }}>פעולות מהירות</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button onClick={() => openProductModal()} style={btn(G, BK, { fontSize: '13px', padding: '9px 16px' })}><Plus size={14}/> מוצר</button>
+                <button onClick={() => { setCatForm({name:'',is_parent:false,parent_id:''}); setCatImageFile(null); setEditingCat(null); setShowCatModal(true); }} style={btn(BK, WH, { fontSize: '13px', padding: '9px 16px' })}><Plus size={14}/> קטגוריה</button>
+                <button onClick={() => setTab('banner')} style={{ ...btn(WH, BK, { fontSize: '13px', padding: '9px 16px', border: `1px solid ${BR}` }) }}><Image size={14}/> באנר</button>
+                <button onClick={() => { setEditingReview(null); setReviewForm({text:'',stars:5}); setShowReviewModal(true); }} style={{ ...btn(WH, BK, { fontSize: '13px', padding: '9px 16px', border: `1px solid ${BR}` }) }}><Star size={14}/> המלצה</button>
+                <button onClick={() => setTab('popup')} style={{ ...btn(WH, BK, { fontSize: '13px', padding: '9px 16px', border: `1px solid ${BR}` }) }}><Bell size={14}/> פופ-אפ</button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Products Tab */}
-        {activeTab === 'products' && (
+        {/* PRODUCTS */}
+        {tab === 'products' && (
           <div>
-            {/* Toolbar */}
-            <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', marginBottom: '20px', display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <button onClick={openAddModal} style={{ background: '#D4AF37', color: '#fff', border: 'none', padding: '14px 24px', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#B8941F'} onMouseOut={(e) => e.currentTarget.style.background = '#D4AF37'}>
-                <Plus size={20} /> הוסף מוצר חדש
-              </button>
-              
-              <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
-                <Search size={18} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
-                <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="חיפוש מוצר..." style={{ paddingRight: '40px', borderRadius: '4px' }} />
+            <div style={{ ...card, padding: '14px 16px', marginBottom: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button onClick={() => openProductModal()} style={btn(G, BK, { padding: '10px 18px' })}><Plus size={15}/> מוצר חדש</button>
+              <div style={{ flex: 1, minWidth: '160px', position: 'relative' }}>
+                <Search size={14} style={{ position: 'absolute', right: '11px', top: '50%', transform: 'translateY(-50%)', color: '#bbb', pointerEvents: 'none' }} />
+                <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="חיפוש..." style={{ ...inp, paddingRight: '34px', padding: '10px 34px 10px 12px' }} />
               </div>
-
-              <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} style={{ minWidth: '180px', borderRadius: '4px' }}>
+              <select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ ...inp, width: 'auto', minWidth: '140px', padding: '10px 12px' }}>
                 <option value="">כל הקטגוריות</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
+                {categories.filter(c=>!c.is_parent).map(c => <option key={c.id} value={c.id}>{c.parent_id ? `↳ ${c.name}` : c.name}</option>)}
               </select>
             </div>
-
-            {/* Products Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-              {filteredProducts.map(product => (
-                <div key={product.id} style={{ background: '#fff', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'transform 0.2s', cursor: 'pointer', position: 'relative' }} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                  
-                  {product.is_featured && (
-                    <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10, background: '#D4AF37', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(212,175,55,0.4)' }}>
-                      ⭐
-                    </div>
-                  )}
-
-                  <div style={{ width: '100%', height: '250px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {product.primary_image ? (
-                      <img src={product.primary_image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <ImageIcon size={60} color="#ccc" />
-                    )}
+            <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '12px' }}>{filtered.length} מוצרים</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: '14px' }}>
+              {filtered.map(p => (
+                <div key={p.id} className="pcard" style={{ ...card, position: 'relative', overflow: 'hidden' }}>
+                  {p.is_featured && <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10, background: G, borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Star size={12} fill={BK} color={BK}/></div>}
+                  <div style={{ height: '190px', background: BG, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {p.primary_image ? <img src={p.primary_image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={40} color="#ddd"/>}
                   </div>
-
-                  <div style={{ padding: '20px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', color: '#2D2420' }}>{product.name}</h3>
-                    <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>{product.category_name || 'ללא קטגוריה'}</p>
-                    
-                    {product.sale_price && (
-                      <div style={{ display: 'inline-block', background: '#D4AF37', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>
-                        🏷️ מבצע!
+                  <div style={{ padding: '12px 14px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '2px', color: BK }}>{p.name}</div>
+                    <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '8px' }}>{p.category_name || 'ללא קטגוריה'}</div>
+                    {p.dimensions && <div style={{ fontSize: '11px', color: '#888', marginBottom: '2px' }}>📐 {p.dimensions}</div>}
+                    {p.material && <div style={{ fontSize: '11px', color: '#888', marginBottom: '6px' }}>🔩 {p.material}</div>}
+                    {p.allows_engraving && Array.isArray(p.engraving_type) && p.engraving_type.length > 0 && (
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                        {p.engraving_type.map(t => {
+                          const opt = ENGRAVING_OPTIONS.find(o => o.value === t);
+                          return opt ? (
+                            <span key={t} style={{ fontSize: '10px', background: '#fef9ee', border: `1px solid ${G}`, color: '#8a6d00', padding: '2px 7px', borderRadius: '20px' }}>
+                              {opt.icon} {opt.label}
+                            </span>
+                          ) : null;
+                        })}
                       </div>
                     )}
-                    
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <div>
-                        {product.sale_price ? (
-                          <div>
-                            <span style={{ fontSize: '16px', color: '#999', textDecoration: 'line-through', marginLeft: '8px' }}>₪{product.price}</span>
-                            <span style={{ fontSize: '22px', fontWeight: '700', color: '#D4AF37' }}>₪{product.sale_price}</span>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: '20px', fontWeight: '700', color: '#2D2420' }}>₪{product.price}</span>
-                        )}
-                      </div>
-                      <span style={{ fontSize: '14px', color: '#666' }}>מלאי: {product.stock_quantity || 0}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      {p.on_sale && p.sale_price ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <span style={{ fontSize: '12px', color: '#bbb', textDecoration: 'line-through' }}>₪{p.price}</span>
+                          <span style={{ fontSize: '17px', fontWeight: '700', color: '#dc2626' }}>₪{p.sale_price}</span>
+                        </div>
+                      ) : <span style={{ fontSize: '17px', fontWeight: '700', color: BK }}>₪{p.price}</span>}
+                      <span style={{ fontSize: '10px', color: '#bbb', background: BG, padding: '2px 7px', borderRadius: '20px' }}>מלאי: {p.stock_quantity || 0}</span>
                     </div>
-
-                    {product.engraving_available && (
-                      <div style={{ fontSize: '13px', color: '#4CAF50', marginBottom: '12px' }}>✓ חריטה אישית</div>
-                    )}
-
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                      <button onClick={() => openImagesModal(product)} style={{ flex: 1, padding: '8px', background: '#f5f5f5', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
-                        📷 {product.images_count} תמונות
-                      </button>
+                    <div style={{ display: 'flex', gap: '5px', marginBottom: '7px' }}>
+                      <button onClick={() => openImagesModal(p)} style={{ flex: 1, ...btn(BG, '#666', { padding: '6px', fontSize: '11px', justifyContent: 'center', border: `1px solid ${BR}` }) }}>📷 {p.images_count}</button>
+                      <button onClick={() => openColorsModal(p)} style={{ flex: 1, ...btn(BG, '#666', { padding: '6px', fontSize: '11px', justifyContent: 'center', border: `1px solid ${BR}` }) }}>🎨 {p.colors_count}</button>
+                      <button onClick={() => toggleFeatured(p)} style={{ ...btn(BG, p.is_featured ? G : '#bbb', { padding: '6px 9px', border: `1px solid ${p.is_featured ? G : BR}` }) }}><Star size={13} fill={p.is_featured ? G : 'none'}/></button>
                     </div>
-
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => openEditModal(product)} style={{ flex: 1, padding: '10px', background: '#D4AF37', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#B8941F'} onMouseOut={(e) => e.currentTarget.style.background = '#D4AF37'}>
-                        ערוך
-                      </button>
-                      <button onClick={() => handleDelete(product.id)} style={{ padding: '10px 16px', background: '#fff', color: '#dc2626', border: '1px solid #dc2626', borderRadius: '4px', cursor: 'pointer' }}>
-                        <Trash2 size={18} />
-                      </button>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                      <button onClick={() => openProductModal(p)} style={{ flex: 1, ...btn(BK, WH, { padding: '7px', justifyContent: 'center', fontSize: '12px' }) }}><Edit size={12}/> ערוך</button>
+                      <button onClick={() => deleteProduct(p.id)} style={{ ...btn(WH, '#dc2626', { padding: '7px 10px', border: '1px solid #fca5a5' }) }}><Trash2 size={14}/></button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-
-            {filteredProducts.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '60px 20px', color: '#999' }}>
-                <p style={{ fontSize: '18px' }}>לא נמצאו מוצרים</p>
+            {filtered.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '60px', color: '#bbb' }}>
+                <Package size={40} color="#ddd" style={{ marginBottom: '10px' }}/>
+                <p>לא נמצאו מוצרים</p>
               </div>
             )}
           </div>
         )}
 
-        {/* Categories Tab */}
-        {activeTab === 'categories' && (
+        {/* FEATURED */}
+        {tab === 'featured' && (
           <div>
-            <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: '700' }}>ניהול קטגוריות</h2>
-                <button 
-                  onClick={openAddCategoryModal}
-                  style={{ background: '#D4AF37', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s' }}
-                  onMouseOver={(e) => e.currentTarget.style.background = '#B8941F'}
-                  onMouseOut={(e) => e.currentTarget.style.background = '#D4AF37'}
-                >
-                  + הוסף קטגוריה
-                </button>
+            <div style={{ ...card, padding: '16px 20px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: BK }}>מוצרים מומלצים</div>
+                <div style={{ fontSize: '12px', color: '#aaa', marginTop: '2px' }}>מופיעים בעמוד הבית — "המיוחדים שלנו"</div>
               </div>
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {categories.map(cat => {
-                  const count = products.filter(p => p.category_id === cat.id).length;
+              <div style={{ fontSize: '26px', fontWeight: '700', color: G }}>{featured.length}</div>
+            </div>
+            {featured.length === 0 ? (
+              <div style={{ ...card, padding: '60px', textAlign: 'center', color: '#bbb' }}>
+                <Star size={40} color="#ddd" style={{ marginBottom: '10px' }}/>
+                <p>אין מוצרים מומלצים</p>
+                <p style={{ fontSize: '11px', marginTop: '4px' }}>לחץ על ⭐ בכרטיס מוצר</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: '14px' }}>
+                {featured.map(p => (
+                  <div key={p.id} style={{ ...card, border: `2px solid ${G}`, overflow: 'hidden' }}>
+                    <div style={{ height: '170px', background: BG, overflow: 'hidden', position: 'relative' }}>
+                      {p.primary_image ? <img src={p.primary_image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><Package size={36} color="#ddd"/></div>}
+                      <div style={{ position: 'absolute', top: '8px', right: '8px', background: G, borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Star size={12} fill={BK} color={BK}/></div>
+                    </div>
+                    <div style={{ padding: '12px 14px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>{p.name}</div>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button onClick={() => openProductModal(p)} style={{ flex: 1, ...btn(BK, WH, { padding: '7px', justifyContent: 'center', fontSize: '12px' }) }}>ערוך</button>
+                        <button onClick={() => toggleFeatured(p)} style={{ ...btn(WH, '#dc2626', { padding: '7px 10px', border: '1px solid #fca5a5', fontSize: '11px' }) }}>הסר</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CATEGORIES */}
+        {tab === 'categories' && (
+          <div style={{ display: 'grid', gridTemplateColumns: selCatPanel ? '280px 1fr' : '1fr', gap: '16px' }}>
+            <div style={{ ...card, padding: '20px', height: 'fit-content' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ fontSize: '15px', fontWeight: '700', color: BK }}>קטגוריות</div>
+                <button onClick={() => { setCatForm({name:'',is_parent:false,parent_id:''}); setCatImageFile(null); setEditingCat(null); setShowCatModal(true); }} style={btn(G, BK, { padding: '6px 12px', fontSize: '12px' })}>+ הוסף</button>
+              </div>
+              <div style={{ display: 'grid', gap: '5px' }}>
+                {parentCats.map(pc => {
+                  const isOpen = openParents[pc.id];
+                  const subs = subCats(pc.id);
                   return (
-                    <div key={cat.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f9f9f9', borderRadius: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                        {cat.image_url && (
-                          <img src={cat.image_url} alt={cat.name} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
-                        )}
-                        <div>
-                          <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>{cat.name}</div>
-                          <div style={{ fontSize: '13px', color: '#666' }}>{count} מוצרים</div>
+                    <div key={pc.id}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: BK, borderRadius: isOpen ? '8px 8px 0 0' : '8px', cursor: 'pointer', borderRight: `4px solid ${G}` }}
+                        onClick={() => setOpenParents(p => ({ ...p, [pc.id]: !p[pc.id] }))}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                          <span className={`arrow ${isOpen ? 'open' : ''}`}>▶</span>
+                          <div>
+                            <div style={{ fontSize: '13px', fontWeight: '700', color: WH }}>{pc.name}</div>
+                            <div style={{ fontSize: '10px', color: '#666' }}>{subs.length} תתי-קטגוריות</div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
+                          <button onClick={() => openEditCat(pc)} style={{ padding: '3px 7px', background: G, color: BK, border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '10px', fontWeight: '600' }}>ערוך</button>
+                          <button onClick={() => deleteCat(pc.id)} style={{ padding: '3px 5px', background: 'transparent', border: '1px solid #dc2626', color: '#dc2626', borderRadius: '4px', cursor: 'pointer' }}><Trash2 size={10}/></button>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button 
-                          onClick={() => openEditCategoryModal(cat)} 
-                          style={{ padding: '8px 16px', background: '#D4AF37', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                          ערוך
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteCategory(cat.id)} 
-                          style={{ padding: '8px', background: '#fff', border: '1px solid #dc2626', color: '#dc2626', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      {isOpen && (
+                        <div style={{ background: '#fafaf8', border: `1px solid ${BR}`, borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '4px' }}>
+                          {subs.length === 0
+                            ? <div style={{ padding: '8px', textAlign: 'center', fontSize: '11px', color: '#bbb' }}>אין תתי-קטגוריות</div>
+                            : subs.map(sc => {
+                              const cnt = products.filter(p => p.category_id?.toString() === sc.id?.toString()).length;
+                              const isSel = selCatPanel?.toString() === sc.id?.toString();
+                              return (
+                                <div key={sc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', background: isSel ? BK : WH, borderRadius: '6px', marginBottom: '2px', cursor: 'pointer', borderRight: `3px solid ${G}` }}
+                                  onClick={() => setSelCatPanel(isSel ? null : sc.id)}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    {sc.image_url && <img src={sc.image_url} alt={sc.name} style={{ width: '24px', height: '24px', objectFit: 'cover', borderRadius: '3px' }} />}
+                                    <div>
+                                      <div style={{ fontSize: '12px', fontWeight: '600', color: isSel ? WH : BK }}>↳ {sc.name}</div>
+                                      <div style={{ fontSize: '10px', color: isSel ? '#888' : '#aaa' }}>{cnt} מוצרים</div>
+                                    </div>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '3px' }} onClick={e => e.stopPropagation()}>
+                                    <button onClick={() => openEditCat(sc)} style={{ padding: '3px 6px', background: isSel ? G : BK, color: isSel ? BK : WH, border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}>ערוך</button>
+                                    <button onClick={() => deleteCat(sc.id)} style={{ padding: '3px 4px', background: 'transparent', border: '1px solid #dc2626', color: '#dc2626', borderRadius: '4px', cursor: 'pointer' }}><Trash2 size={9}/></button>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          }
+                        </div>
+                      )}
                     </div>
                   );
                 })}
+                {regularCats.length > 0 && (
+                  <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${BR}` }}>
+                    <div style={{ fontSize: '10px', color: '#bbb', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '5px' }}>קטגוריות רגילות</div>
+                    {regularCats.map(c => {
+                      const cnt = products.filter(p => p.category_id?.toString() === c.id?.toString()).length;
+                      const isSel = selCatPanel?.toString() === c.id?.toString();
+                      return (
+                        <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: isSel ? BK : '#f9f9f7', borderRadius: '7px', marginBottom: '3px', cursor: 'pointer', borderRight: '3px solid #aaa' }}
+                          onClick={() => setSelCatPanel(isSel ? null : c.id)}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {c.image_url && <img src={c.image_url} alt={c.name} style={{ width: '26px', height: '26px', objectFit: 'cover', borderRadius: '4px' }} />}
+                            <div>
+                              <div style={{ fontSize: '12px', fontWeight: '600', color: isSel ? WH : BK }}>{c.name}</div>
+                              <div style={{ fontSize: '10px', color: isSel ? '#888' : '#aaa' }}>{cnt} מוצרים</div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
+                            <button onClick={() => openEditCat(c)} style={{ padding: '3px 7px', background: isSel ? G : BK, color: isSel ? BK : WH, border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}>ערוך</button>
+                            <button onClick={() => deleteCat(c.id)} style={{ padding: '3px 5px', background: 'transparent', border: '1px solid #dc2626', color: '#dc2626', borderRadius: '4px', cursor: 'pointer' }}><Trash2 size={10}/></button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {selCatPanel && (() => {
+              const cat = categories.find(c => c.id?.toString() === selCatPanel?.toString());
+              const catProds = products.filter(p => p.category_id?.toString() === selCatPanel?.toString());
+              return (
+                <div style={{ ...card, padding: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: BK }}>{cat?.name}</div>
+                      <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px' }}>{catProds.length} מוצרים</div>
+                    </div>
+                    <button onClick={() => openProductModal(null, selCatPanel)} style={btn(G, BK, { fontSize: '13px' })}><Plus size={14}/> הוסף</button>
+                  </div>
+                  {catProds.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px', color: '#bbb', border: `2px dashed ${BR}`, borderRadius: '10px' }}>
+                      <Package size={32} color="#ddd" style={{ marginBottom: '8px' }}/>
+                      <p style={{ marginBottom: '12px', fontSize: '13px' }}>אין מוצרים</p>
+                      <button onClick={() => openProductModal(null, selCatPanel)} style={btn(G, BK, { fontSize: '12px' })}>+ הוסף ראשון</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: '10px' }}>
+                      {catProds.map(p => (
+                        <div key={p.id} style={{ border: `1px solid ${BR}`, borderRadius: '9px', overflow: 'hidden' }}>
+                          <div style={{ height: '120px', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                            {p.primary_image ? <img src={p.primary_image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={28} color="#ddd"/>}
+                            {p.is_featured && <div style={{ position: 'absolute', top: '4px', right: '4px', background: G, borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Star size={9} fill={BK} color={BK}/></div>}
+                          </div>
+                          <div style={{ padding: '9px 10px' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                            <div style={{ fontSize: '12px', fontWeight: '700', color: BK, marginBottom: '7px' }}>₪{p.sale_price || p.price}</div>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              <button onClick={() => openProductModal(p)} style={{ flex: 1, ...btn(BK, WH, { padding: '5px', fontSize: '10px', justifyContent: 'center' }) }}>ערוך</button>
+                              <button onClick={() => openImagesModal(p)} style={{ ...btn(BG, '#666', { padding: '5px 6px', fontSize: '10px', border: `1px solid ${BR}` }) }}>📷</button>
+                              <button onClick={() => deleteProduct(p.id)} style={{ ...btn(WH, '#dc2626', { padding: '5px', border: '1px solid #fca5a5' }) }}><Trash2 size={11}/></button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* REVIEWS */}
+        {tab === 'reviews' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <div style={{ fontSize: '17px', fontWeight: '700', color: BK }}>המלצות</div>
+                <div style={{ fontSize: '12px', color: '#aaa', marginTop: '2px' }}>מופיעות בעמוד הבית</div>
+              </div>
+              <button onClick={() => { setEditingReview(null); setReviewForm({text:'',stars:5}); setShowReviewModal(true); }} style={btn(G, BK, { fontSize: '13px' })}><Plus size={14}/> הוסף</button>
+            </div>
+            {reviews.length === 0 ? (
+              <div style={{ ...card, padding: '60px', textAlign: 'center', color: '#bbb' }}><MessageSquare size={36} color="#ddd" style={{ marginBottom: '10px' }}/><p>אין המלצות</p></div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '12px' }}>
+                {reviews.map(r => (
+                  <div key={r.id} style={{ ...card, padding: '16px 18px' }}>
+                    <div style={{ display: 'flex', gap: '2px', marginBottom: '8px' }}>
+                      {[...Array(5)].map((_,i) => <Star key={i} size={14} fill={i < (r.stars||5) ? G : '#ddd'} color={i < (r.stars||5) ? G : '#ddd'}/>)}
+                    </div>
+                    <p style={{ fontSize: '13px', color: BK, lineHeight: '1.6', marginBottom: '12px' }}>"{r.text}"</p>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button onClick={() => { setEditingReview(r); setReviewForm({text:r.text,stars:r.stars||5}); setShowReviewModal(true); }} style={{ flex: 1, ...btn(BK, WH, { padding: '7px', justifyContent: 'center', fontSize: '12px' }) }}><Edit size={11}/> ערוך</button>
+                      <button onClick={() => deleteReview(r.id)} style={{ ...btn(WH, '#dc2626', { padding: '7px 9px', border: '1px solid #fca5a5' }) }}><Trash2 size={13}/></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* COUPONS */}
+        {tab === 'coupons' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <div style={{ fontSize: '17px', fontWeight: '700', color: BK }}>קודי קופון</div>
+                <div style={{ fontSize: '12px', color: '#aaa', marginTop: '2px' }}>ניהול הנחות לפי קוד</div>
+              </div>
+              <button onClick={() => { setEditingCoupon(null); setCouponForm({code:'',discount_type:'percentage',discount_value:'',min_order:'',is_active:true,expires_at:''}); setShowCouponModal(true); }} style={btn(G, BK, { fontSize: '13px' })}><Plus size={14}/> קופון חדש</button>
+            </div>
+            {coupons.length === 0 ? (
+              <div style={{ ...card, padding: '60px', textAlign: 'center', color: '#bbb' }}><Percent size={36} color="#ddd" style={{ marginBottom: '10px' }}/><p>אין קופונים</p></div>
+            ) : (
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {coupons.map(c => (
+                  <div key={c.id} style={{ ...card, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      <div style={{ background: c.is_active ? G : '#eee', color: c.is_active ? BK : '#aaa', padding: '5px 12px', borderRadius: '7px', fontWeight: '700', fontSize: '14px', letterSpacing: '1px', whiteSpace: 'nowrap' }}>{c.code}</div>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: BK }}>
+                          {c.discount_type === 'percentage' ? `${c.discount_value}% הנחה` : `₪${c.discount_value} הנחה`}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#aaa', display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '2px' }}>
+                          {c.min_order > 0 && <span>מינ׳ ₪{c.min_order}</span>}
+                          {c.expires_at && <span>עד {new Date(c.expires_at).toLocaleDateString('he-IL')}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: c.is_active ? '#16a34a' : '#aaa' }}>
+                        <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: c.is_active ? '#16a34a' : '#ddd' }}></div>
+                        {c.is_active ? 'פעיל' : 'כבוי'}
+                      </div>
+                      <button onClick={() => toggleCoupon(c)} style={{ ...btn(BG, BK, { padding: '5px 10px', fontSize: '11px', border: `1px solid ${BR}` }) }}>{c.is_active ? 'השבת' : 'הפעל'}</button>
+                      <button onClick={() => { setEditingCoupon(c); setCouponForm({code:c.code,discount_type:c.discount_type,discount_value:c.discount_value,min_order:c.min_order||'',is_active:c.is_active,expires_at:c.expires_at||''}); setShowCouponModal(true); }} style={{ ...btn(BK, WH, { padding: '5px 10px', fontSize: '11px' }) }}><Edit size={12}/></button>
+                      <button onClick={() => deleteCoupon(c.id)} style={{ ...btn(WH, '#dc2626', { padding: '5px 8px', border: '1px solid #fca5a5' }) }}><Trash2 size={13}/></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* POPUP */}
+        {tab === 'popup' && (
+          <div style={{ maxWidth: '680px' }}>
+            <div style={{ ...card, padding: '28px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '22px' }}>
+                <div>
+                  <div style={{ fontSize: '17px', fontWeight: '700', color: BK }}>פופ-אפ קופץ</div>
+                  <div style={{ fontSize: '12px', color: '#aaa', marginTop: '3px' }}>חלון שמופיע אוטומטית למבקרים חדשים</div>
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <span style={{ fontSize: '12px', color: popup.is_active ? '#16a34a' : '#aaa', fontWeight: '600' }}>{popup.is_active ? 'פעיל' : 'כבוי'}</span>
+                  <div style={{ position: 'relative', width: '42px', height: '22px' }} onClick={() => setPopup({...popup, is_active: !popup.is_active})}>
+                    <div style={{ width: '42px', height: '22px', background: popup.is_active ? G : '#ddd', borderRadius: '11px', transition: 'background 0.2s' }}></div>
+                    <div style={{ position: 'absolute', top: '3px', left: popup.is_active ? '22px' : '3px', width: '16px', height: '16px', background: WH, borderRadius: '50%', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}></div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ display: 'grid', gap: '16px' }}>
+
+                {/* תמונת פופ-אפ */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: BK }}>
+                    תמונת הפופ-אפ
+                    <span style={{ fontSize: '11px', color: '#aaa', fontWeight: '400', marginRight: '6px' }}>— זו התמונה שתקפוץ לגולשים</span>
+                  </label>
+                  <div style={{ background: BG, borderRadius: '10px', border: `2px dashed ${BR}`, padding: '16px', textAlign: 'center', marginBottom: '10px', minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {popupImagePreview ? (
+                      <div style={{ position: 'relative', width: '100%' }}>
+                        <img src={popupImagePreview} alt="popup preview" style={{ maxWidth: '100%', maxHeight: '240px', borderRadius: '8px', objectFit: 'contain' }} />
+                        <button onClick={() => { setPopupImagePreview(null); setPopupImageFile(null); setPopup({...popup, image_url: null}); }}
+                          style={{ position: 'absolute', top: '-8px', left: '-8px', background: '#dc2626', border: 'none', borderRadius: '50%', width: '24px', height: '24px', color: WH, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <X size={12}/>
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <Upload size={32} color="#ccc" style={{ marginBottom: '8px' }}/>
+                        <div style={{ fontSize: '12px', color: '#bbb' }}>העלה תמונה לפופ-אפ</div>
+                        <div style={{ fontSize: '11px', color: '#ccc', marginTop: '3px' }}>מומלץ: 600×400px</div>
+                      </div>
+                    )}
+                  </div>
+                  <input type="file" accept="image/*" onChange={e => {
+                    const f = e.target.files[0];
+                    if (f) { setPopupImageFile(f); setPopupImagePreview(URL.createObjectURL(f)); }
+                  }} style={inp} />
+                </div>
+
+                {/* טקסט אופציונלי */}
+                <div style={{ background: BG, borderRadius: '8px', padding: '14px', border: `1px solid ${BR}` }}>
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: BK, marginBottom: '10px' }}>טקסט על הפופ-אפ (אופציונלי)</div>
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>כותרת</label>
+                      <input value={popup.title || ''} onChange={e => setPopup({...popup, title: e.target.value})} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} placeholder="לדוגמה: 10% הנחה לנרשמים חדשים!" />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>הודעה</label>
+                      <textarea value={popup.message || ''} onChange={e => setPopup({...popup, message: e.target.value})} rows="2" style={{ ...inp, padding: '9px 12px', fontSize: '13px', resize: 'vertical' }} placeholder="תוכן ההודעה..."></textarea>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>טקסט כפתור סגירה</label>
+                      <input value={popup.button_text || 'סגור'} onChange={e => setPopup({...popup, button_text: e.target.value})} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* תצוגה מקדימה */}
+                {popup.is_active && (popupImagePreview || popup.title) && (
+                  <div style={{ background: BG, borderRadius: '10px', padding: '16px', border: `1px solid ${BR}` }}>
+                    <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px', fontWeight: '600' }}>👁 תצוגה מקדימה — כך יראה הפופ-אפ:</div>
+                    <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '8px', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ background: WH, borderRadius: '12px', overflow: 'hidden', maxWidth: '280px', width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', position: 'relative' }}>
+                        <button style={{ position: 'absolute', top: '8px', left: '8px', background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '22px', height: '22px', color: WH, cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>✕</button>
+                        {popupImagePreview && <img src={popupImagePreview} alt="popup" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover' }} />}
+                        {(popup.title || popup.message) && (
+                          <div style={{ padding: '14px', textAlign: 'center' }}>
+                            {popup.title && <div style={{ fontSize: '14px', fontWeight: '700', color: BK, marginBottom: '6px' }}>{popup.title}</div>}
+                            {popup.message && <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.5', marginBottom: '12px' }}>{popup.message}</div>}
+                            <div style={{ background: G, color: BK, padding: '7px 16px', borderRadius: '7px', fontSize: '12px', fontWeight: '600', display: 'inline-block' }}>{popup.button_text || 'סגור'}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <button onClick={savePopup} disabled={uploading} style={{ ...btn(G, BK, { padding: '13px', justifyContent: 'center', fontSize: '14px', width: '100%', opacity: uploading ? 0.6 : 1 }) }}>
+                  {uploading ? 'שומר...' : '✓ שמור פופ-אפ'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* BANNER & LOGO */}
+        {tab === 'banner' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '20px' }}>
+
+            {/* באנר */}
+            <div style={{ ...card, padding: '24px' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: BK, marginBottom: '4px' }}>באנר ראשי</div>
+              <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '18px' }}>התמונה הגדולה בראש עמוד הבית</div>
+              <div style={{ background: BG, borderRadius: '10px', padding: '16px', marginBottom: '16px', textAlign: 'center', border: `2px dashed ${BR}`, minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {bannerPreview ? (
+                  <img src={bannerPreview} alt="banner" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '6px', objectFit: 'contain' }}
+                    onError={e => e.target.style.display='none'} />
+                ) : (
+                  <div><Image size={32} color="#ddd" style={{ marginBottom: '8px' }}/><div style={{ color: '#bbb', fontSize: '12px' }}>תצוגה מקדימה</div></div>
+                )}
+              </div>
+              <input type="file" accept="image/*" onChange={e => { const f = e.target.files[0]; if (f) { setBannerFile(f); setBannerPreview(URL.createObjectURL(f)); } }} style={{ ...inp, marginBottom: '12px' }} />
+              <div style={{ fontSize: '11px', color: '#bbb', marginBottom: '14px' }}>מומלץ: 1400×600px לפחות</div>
+              <button onClick={uploadBanner} disabled={!bannerFile || uploading} style={{ ...btn(G, BK, { padding: '11px 20px', opacity: (!bannerFile || uploading) ? 0.5 : 1 }) }}>
+                {uploading ? 'מעלה...' : <><Upload size={14}/> עדכן באנר</>}
+              </button>
+            </div>
+
+            {/* לוגו */}
+            <div style={{ ...card, padding: '24px' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: BK, marginBottom: '4px' }}>לוגו החנות</div>
+              <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '18px' }}>מופיע בנאב האתר ובדשבורד הניהול</div>
+              <div style={{ background: BG, borderRadius: '10px', padding: '16px', marginBottom: '16px', textAlign: 'center', border: `2px dashed ${BR}`, minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {logoPreview ? (
+                  <img src={logoPreview} alt="logo" style={{ maxHeight: '80px', maxWidth: '100%', objectFit: 'contain' }}
+                    onError={e => e.target.style.display='none'} />
+                ) : (
+                  <div><Image size={28} color="#ddd" style={{ marginBottom: '6px' }}/><div style={{ color: '#bbb', fontSize: '12px' }}>תצוגה מקדימה</div></div>
+                )}
+              </div>
+              <input type="file" accept="image/*" onChange={e => { const f = e.target.files[0]; if (f) { setLogoFile(f); setLogoPreview(URL.createObjectURL(f)); } }} style={{ ...inp, marginBottom: '12px' }} />
+              <div style={{ fontSize: '11px', color: '#bbb', marginBottom: '14px' }}>מומלץ: PNG שקוף, גובה 60px</div>
+              <button onClick={uploadLogo} disabled={!logoFile || uploading} style={{ ...btn(BK, WH, { padding: '11px 20px', opacity: (!logoFile || uploading) ? 0.5 : 1 }) }}>
+                {uploading ? 'מעלה...' : <><Upload size={14}/> עדכן לוגו</>}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* SETTINGS */}
+        {tab === 'settings' && (
+          <div style={{ maxWidth: '560px' }}>
+            <div style={{ ...card, padding: '28px' }}>
+              <div style={{ fontSize: '17px', fontWeight: '700', color: BK, marginBottom: '22px' }}>הגדרות החנות</div>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: BK }}>שם החנות</label>
+                  <input value="ההיכל" style={inp} readOnly />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: BK }}>מספר וואטסאפ</label>
+                  <input style={inp} placeholder="972501234567" />
+                  <div style={{ fontSize: '11px', color: '#bbb', marginTop: '4px' }}>ללא + ומקפים</div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: BK }}>שם אינסטגרם</label>
+                  <input style={inp} placeholder="hahiechal_judaica" />
+                </div>
+                <div style={{ background: '#fffbf0', border: `1px solid ${G}`, borderRadius: '8px', padding: '12px', fontSize: '12px', color: '#8a6d00' }}>
+                  💡 לאחר שמירה, עדכן את הערכים גם בקוד — Header.jsx ו-Footer.jsx
+                </div>
+                <button onClick={() => alert('נשמר!')} style={{ ...btn(G, BK, { padding: '12px', justifyContent: 'center', fontSize: '14px', width: '100%' }) }}>
+                  שמור הגדרות
+                </button>
               </div>
             </div>
           </div>
         )}
       </div>
 
+      {/* ══ MODALS ══ */}
+
       {/* Category Modal */}
-      {showCategoryModal && (
-        <div className="modal-overlay" onClick={() => { setShowCategoryModal(false); setEditingCategory(null); }}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: '700' }}>{editingCategory ? 'עריכת קטגוריה' : 'הוספת קטגוריה חדשה'}</h2>
-              <button onClick={() => { setShowCategoryModal(false); setEditingCategory(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+      {showCatModal && (
+        <div className="modal-overlay" onClick={() => { setShowCatModal(false); setEditingCat(null); }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ fontSize: '17px', fontWeight: '700' }}>{editingCat ? 'עריכת קטגוריה' : 'קטגוריה חדשה'}</div>
+              <button onClick={() => { setShowCatModal(false); setEditingCat(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa' }}><X size={20}/></button>
             </div>
-
-            <form onSubmit={handleSaveCategory}>
-              <div style={{ display: 'grid', gap: '16px' }}>
+            <form onSubmit={saveCat}>
+              <div style={{ display: 'grid', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>שם הקטגוריה *</label>
-                  <input 
-                    type="text" 
-                    value={categoryForm.name} 
-                    onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})} 
-                    placeholder="לדוגמה: מזוזות" 
-                    required 
-                    style={{ borderRadius: '4px' }}
-                  />
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>שם *</label>
+                  <input value={catForm.name} onChange={e => setCatForm({...catForm, name: e.target.value})} style={inp} required />
                 </div>
-
                 <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>תמונה ראשית</label>
-                  {editingCategory?.image_url && !categoryImageFile && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <img src={editingCategory.image_url} alt="Current" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '4px' }} />
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>סוג:</label>
+                  <div style={{ display: 'grid', gap: '6px' }}>
+                    {[
+                      { v: 'regular', l: 'קטגוריה רגילה', d: 'עצמאית עם מוצרים', active: !catForm.is_parent && !catForm.parent_id },
+                      { v: 'parent', l: 'קטגוריה ראשית', d: 'תפריט בנאב — ללא מוצרים', active: catForm.is_parent },
+                      { v: 'sub', l: 'תת-קטגוריה', d: 'שייכת לקטגוריה ראשית', active: !catForm.is_parent && !!catForm.parent_id },
+                    ].map(opt => (
+                      <label key={opt.v} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 13px', background: opt.active ? BK : BG, borderRadius: '8px', cursor: 'pointer', border: `1px solid ${opt.active ? BK : BR}` }}>
+                        <input type="radio" name="ctype" checked={opt.active} onChange={() => {
+                          if (opt.v === 'regular') setCatForm({...catForm, is_parent: false, parent_id: ''});
+                          if (opt.v === 'parent') setCatForm({...catForm, is_parent: true, parent_id: ''});
+                          if (opt.v === 'sub') setCatForm({...catForm, is_parent: false, parent_id: parentCats[0]?.id || ''});
+                        }} style={{ width: 'auto', accentColor: G }} />
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: opt.active ? WH : BK }}>{opt.l}</div>
+                          <div style={{ fontSize: '11px', color: opt.active ? '#888' : '#aaa' }}>{opt.d}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  {!catForm.is_parent && !!catForm.parent_id && (
+                    <div style={{ marginTop: '10px' }}>
+                      <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>שייכת ל:</label>
+                      <select value={catForm.parent_id} onChange={e => setCatForm({...catForm, parent_id: e.target.value})} style={inp}>
+                        {parentCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
                     </div>
                   )}
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={(e) => setCategoryImageFile(e.target.files[0])} 
-                    style={{ padding: '8px' }} 
-                  />
-                  {!editingCategory && (
-                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>התמונה תופיע בעמוד הבית בסקשן "הקטגוריות שלנו"</div>
-                  )}
                 </div>
-
-                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                  <button type="submit" disabled={uploading} style={{ flex: 1, padding: '14px', background: '#D4AF37', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', fontWeight: '600', opacity: uploading ? 0.5 : 1 }}>
-                    {uploading ? 'שומר...' : (editingCategory ? 'שמור שינויים' : 'הוסף קטגוריה')}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>תמונה</label>
+                  {editingCat?.image_url && !catImageFile && <img src={editingCat.image_url} alt="" style={{ width: '100%', maxHeight: '120px', objectFit: 'cover', borderRadius: '7px', marginBottom: '8px' }} />}
+                  <input type="file" accept="image/*" onChange={e => setCatImageFile(e.target.files[0])} style={inp} />
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" disabled={uploading} style={{ flex: 1, ...btn(G, BK, { padding: '11px', justifyContent: 'center', opacity: uploading ? 0.5 : 1 }) }}>
+                    {uploading ? 'שומר...' : (editingCat ? 'שמור' : 'הוסף')}
                   </button>
-                  <button type="button" onClick={() => { setShowCategoryModal(false); setEditingCategory(null); }} style={{ padding: '14px 24px', background: '#fff', color: '#2D2420', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontSize: '16px' }}>
-                    ביטול
-                  </button>
+                  <button type="button" onClick={() => { setShowCatModal(false); setEditingCat(null); }} style={{ ...btn(BG, BK, { padding: '11px 16px', border: `1px solid ${BR}` }) }}>ביטול</button>
                 </div>
               </div>
             </form>
@@ -720,79 +1094,129 @@ const MainDashboard = ({ onLogout }) => {
         </div>
       )}
 
-      {/* Add/Edit Product Modal - ממשיך בהודעה הבאה עקב אורך */}
-      {(showAddModal || editingProduct) && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: '700' }}>{editingProduct ? 'עריכת מוצר' : 'הוספת מוצר חדש'}</h2>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+      {/* Product Modal */}
+      {showProductModal && (
+        <div className="modal-overlay" onClick={closeProductModal}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ fontSize: '17px', fontWeight: '700' }}>{editingProduct ? 'עריכת מוצר' : 'מוצר חדש'}</div>
+              <button onClick={closeProductModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa' }}><X size={20}/></button>
             </div>
-
-            <form onSubmit={handleSaveProduct}>
-              <div style={{ display: 'grid', gap: '16px' }}>
+            <form onSubmit={saveProduct}>
+              <div style={{ display: 'grid', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>שם המוצר *</label>
-                  <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="לדוגמה: מזוזה אלומיניום שחור" required style={{ borderRadius: '4px' }} />
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>שם המוצר *</label>
+                  <input value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} style={inp} required />
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>מחיר (₪) *</label>
-                    <input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} required style={{ borderRadius: '4px' }} />
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>מחיר (₪) *</label>
+                    <input type="number" step="0.01" value={productForm.price} onChange={e => setProductForm({...productForm, price: e.target.value})} style={inp} required />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>כמות במלאי</label>
-                    <input type="number" value={formData.stock_quantity} onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})} style={{ borderRadius: '4px' }} />
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>מלאי</label>
+                    <input type="number" value={productForm.stock_quantity} onChange={e => setProductForm({...productForm, stock_quantity: e.target.value})} style={inp} />
                   </div>
                 </div>
-
                 <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>קטגוריה</label>
-                  <select value={formData.category_id} onChange={(e) => setFormData({...formData, category_id: e.target.value})} style={{ borderRadius: '4px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>קטגוריה</label>
+                  <select value={productForm.category_id} onChange={e => setProductForm({...productForm, category_id: e.target.value})} style={inp}>
                     <option value="">בחר קטגוריה</option>
-                    {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
+                    {categories.filter(c => !c.is_parent).map(c => <option key={c.id} value={c.id}>{c.parent_id ? `↳ ${c.name}` : c.name}</option>)}
                   </select>
                 </div>
-
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>מידות / גודל</label>
+                    <input value={productForm.dimensions} onChange={e => setProductForm({...productForm, dimensions: e.target.value})} style={inp} placeholder='לדוגמה: 15×10 ס"מ' />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>חומר</label>
+                    <input value={productForm.material} onChange={e => setProductForm({...productForm, material: e.target.value})} style={inp} placeholder='כסף, קריסטל...' />
+                  </div>
+                </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>תיאור</label>
-                  <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} rows="4" placeholder="תיאור מפורט של המוצר..." style={{ borderRadius: '4px' }}></textarea>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>תיאור</label>
+                  <textarea value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} rows="3" style={{ ...inp, resize: 'vertical' }} placeholder="תיאור המוצר..."></textarea>
                 </div>
 
-                <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={formData.engraving_available} onChange={(e) => setFormData({...formData, engraving_available: e.target.checked})} style={{ width: 'auto' }} />
-                    <span style={{ fontSize: '15px' }}>מאפשר חריטה אישית</span>
+                {/* checkboxes */}
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={productForm.is_featured} onChange={e => setProductForm({...productForm, is_featured: e.target.checked})} style={{ width: 'auto', accentColor: G }} />
+                    <span style={{ fontSize: '13px' }}>⭐ מומלץ</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={productForm.allows_engraving} onChange={e => setProductForm({...productForm, allows_engraving: e.target.checked, engraving_types: e.target.checked ? productForm.engraving_types : []})} style={{ width: 'auto', accentColor: G }} />
+                    <span style={{ fontSize: '13px' }}>✍️ התאמה אישית</span>
                   </label>
                 </div>
 
-                <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={formData.is_featured} onChange={(e) => setFormData({...formData, is_featured: e.target.checked})} style={{ width: 'auto' }} />
-                    <span style={{ fontSize: '15px' }}>⭐ מומלץ שלנו (יופיע בעמוד הבית)</span>
-                  </label>
-                </div>
+                {/* סוגי התאמה אישית */}
+                {productForm.allows_engraving && (
+                  <div style={{ background: '#fef9ee', border: `1px solid ${G}40`, borderRadius: '10px', padding: '14px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: BK, marginBottom: '10px' }}>בחר סוגי התאמה אישית (ניתן לסמן כמה):</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      {ENGRAVING_OPTIONS.map(opt => {
+                        const isChecked = productForm.engraving_types?.includes(opt.value);
+                        return (
+                          <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: isChecked ? BK : WH, borderRadius: '8px', cursor: 'pointer', border: `1.5px solid ${isChecked ? G : BR}`, transition: 'all 0.15s' }}>
+                            <input type="checkbox" checked={isChecked} onChange={() => toggleEngravingType(opt.value)} style={{ width: 'auto', accentColor: G }} />
+                            <span style={{ fontSize: '13px', fontWeight: '600', color: isChecked ? WH : BK }}>{opt.icon} {opt.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {productForm.engraving_types?.length > 0 && (
+                      <div style={{ marginTop: '10px', fontSize: '12px', color: '#8a6d00' }}>
+                        ✓ נבחרו: {productForm.engraving_types.map(t => ENGRAVING_OPTIONS.find(o => o.value === t)?.label).join(', ')}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>מחיר מבצע (₪)</label>
-                  <input type="number" step="0.01" value={formData.sale_price} onChange={(e) => setFormData({...formData, sale_price: e.target.value})} placeholder="אם יש הנחה - הכנס מחיר אחרי הנחה" style={{ borderRadius: '4px' }} />
+                {/* מבצע */}
+                <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', marginBottom: productForm.on_sale ? '12px' : '0' }}>
+                    <input type="checkbox" checked={productForm.on_sale} onChange={e => setProductForm({...productForm, on_sale: e.target.checked, sale_percentage: '', sale_price: ''})} style={{ width: 'auto', accentColor: G }} />
+                    <span style={{ fontSize: '13px', fontWeight: '600' }}>🏷️ מבצע / הנחה</span>
+                  </label>
+                  {productForm.on_sale && (
+                    <div>
+                      <div style={{ display: 'flex', gap: '12px', marginBottom: '10px' }}>
+                        {[['percentage', 'אחוזים (%)'], ['fixed', 'מחיר קבוע (₪)']].map(([v, l]) => (
+                          <label key={v} style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                            <input type="radio" name="stype" value={v} checked={productForm.sale_type === v} onChange={e => setProductForm({...productForm, sale_type: e.target.value, sale_price: '', sale_percentage: ''})} style={{ width: 'auto', accentColor: G }} />
+                            <span style={{ fontSize: '12px' }}>{l}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {productForm.sale_type === 'percentage' ? (
+                        <input type="number" min="1" max="99" value={productForm.sale_percentage} onChange={e => setProductForm({...productForm, sale_percentage: e.target.value})} placeholder="% הנחה" style={inp} required={productForm.on_sale} />
+                      ) : (
+                        <input type="number" step="0.01" value={productForm.sale_price} onChange={e => setProductForm({...productForm, sale_price: e.target.value})} placeholder="מחיר מבצע ₪" style={inp} required={productForm.on_sale} />
+                      )}
+                      {productForm.price && productForm.sale_percentage && productForm.sale_type === 'percentage' && (
+                        <div style={{ marginTop: '6px', fontSize: '12px', color: '#16a34a', fontWeight: '600' }}>
+                          ✓ מחיר אחרי הנחה: ₪{(parseFloat(productForm.price) * (1 - parseFloat(productForm.sale_percentage)/100)).toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {!editingProduct && (
                   <div>
-                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '600' }}>תמונה ראשית</label>
-                    <input type="file" accept="image/*" onChange={(e) => setNewImageFile(e.target.files[0])} style={{ padding: '8px' }} />
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>תמונה ראשית</label>
+                    <input type="file" accept="image/*" onChange={e => setNewImageFile(e.target.files[0])} style={inp} />
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                  <button type="submit" disabled={uploading} style={{ flex: 1, padding: '14px', background: '#D4AF37', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', fontWeight: '600', opacity: uploading ? 0.5 : 1 }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" disabled={uploading} style={{ flex: 1, ...btn(G, BK, { padding: '12px', justifyContent: 'center', opacity: uploading ? 0.5 : 1 }) }}>
                     {uploading ? 'שומר...' : (editingProduct ? 'שמור שינויים' : 'הוסף מוצר')}
                   </button>
-                  <button type="button" onClick={closeModal} style={{ padding: '14px 24px', background: '#fff', color: '#2D2420', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontSize: '16px' }}>
-                    ביטול
-                  </button>
+                  <button type="button" onClick={closeProductModal} style={{ ...btn(BG, BK, { padding: '12px 16px', border: `1px solid ${BR}` }) }}>ביטול</button>
                 </div>
               </div>
             </form>
@@ -803,36 +1227,152 @@ const MainDashboard = ({ onLogout }) => {
       {/* Images Modal */}
       {showImagesModal && (
         <div className="modal-overlay" onClick={() => setShowImagesModal(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: '700' }}>ניהול תמונות - {showImagesModal.name}</h2>
-              <button onClick={() => setShowImagesModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ fontSize: '15px', fontWeight: '700' }}>תמונות — {showImagesModal.name}</div>
+              <button onClick={() => setShowImagesModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa' }}><X size={18}/></button>
             </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <input type="file" accept="image/*" onChange={(e) => setNewImageFile(e.target.files[0])} style={{ marginBottom: '10px', borderRadius: '4px' }} />
-              <button onClick={addImage} disabled={!newImageFile || uploading} style={{ width: '100%', padding: '12px', background: '#D4AF37', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: (!newImageFile || uploading) ? 0.5 : 1 }}>
-                {uploading ? 'מעלה...' : 'הוסף תמונה'}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <input type="file" accept="image/*" onChange={e => setNewImageFile(e.target.files[0])} style={{ ...inp, flex: 1 }} />
+              <button onClick={addImage} disabled={!newImageFile || uploading} style={{ ...btn(G, BK, { opacity: (!newImageFile || uploading) ? 0.5 : 1, whiteSpace: 'nowrap', fontSize: '13px' }) }}>
+                {uploading ? '...' : '+ הוסף'}
               </button>
             </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))', gap: '8px' }}>
               {productImages.map(img => (
-                <div key={img.id} style={{ position: 'relative', border: img.is_primary ? '3px solid #D4AF37' : '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
-                  <img src={img.image_url} alt="" style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
-                  <div style={{ position: 'absolute', top: '4px', left: '4px' }}>
-                    <button onClick={() => deleteImage(img.id, img.image_url)} style={{ background: '#fff', border: 'none', padding: '6px', borderRadius: '4px', cursor: 'pointer' }}>
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  {img.is_primary ? (
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#D4AF37', color: '#fff', padding: '4px', fontSize: '11px', textAlign: 'center', fontWeight: '600' }}>ראשית</div>
-                  ) : (
-                    <button onClick={() => setPrimary(img.id)} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.95)', border: 'none', padding: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: '600' }}>הגדר ראשית</button>
-                  )}
+                <div key={img.id} style={{ position: 'relative', border: img.is_primary ? `3px solid ${G}` : `1px solid ${BR}`, borderRadius: '8px', overflow: 'hidden' }}>
+                  <img src={img.image_url} alt="" style={{ width: '100%', height: '110px', objectFit: 'cover' }} />
+                  <button onClick={() => deleteImage(img.id, img.image_url)} style={{ position: 'absolute', top: '3px', left: '3px', background: 'rgba(255,255,255,0.9)', border: 'none', padding: '3px', borderRadius: '4px', cursor: 'pointer' }}><Trash2 size={12}/></button>
+                  {img.is_primary
+                    ? <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: G, color: BK, padding: '3px', fontSize: '9px', textAlign: 'center', fontWeight: '700' }}>ראשית</div>
+                    : <button onClick={() => setPrimary(img.id)} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.92)', border: 'none', padding: '3px', fontSize: '9px', cursor: 'pointer', fontWeight: '600' }}>הגדר ראשית</button>
+                  }
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Colors Modal */}
+      {showColorsModal && (
+        <div className="modal-overlay" onClick={() => setShowColorsModal(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ fontSize: '15px', fontWeight: '700' }}>צבעים — {showColorsModal.name}</div>
+              <button onClick={() => setShowColorsModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa' }}><X size={18}/></button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', marginBottom: '12px' }}>
+              <input value={newColor.name} onChange={e => setNewColor({...newColor, name: e.target.value})} placeholder="שם צבע" style={inp} />
+              <input value={newColor.code} onChange={e => setNewColor({...newColor, code: e.target.value})} placeholder="#4d4037" style={inp} />
+              <button onClick={addColor} style={btn(G, BK, { fontSize: '13px' })}>+ הוסף</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {productColors.map(c => (
+                <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: BG, borderRadius: '8px', border: `1px solid ${BR}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                    <div style={{ width: '30px', height: '30px', borderRadius: '6px', background: c.color_code, border: `1px solid ${BR}` }}></div>
+                    <div>
+                      <div style={{ fontWeight: '600', fontSize: '13px' }}>{c.color_name}</div>
+                      <div style={{ fontSize: '11px', color: '#aaa' }}>{c.color_code}</div>
+                    </div>
+                  </div>
+                  <button onClick={() => deleteColor(c.id)} style={{ ...btn(WH, '#dc2626', { padding: '5px 7px', border: '1px solid #fca5a5' }) }}><Trash2 size={13}/></button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="modal-overlay" onClick={() => { setShowReviewModal(false); setEditingReview(null); }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700' }}>{editingReview ? 'עריכת המלצה' : 'המלצה חדשה'}</div>
+              <button onClick={() => { setShowReviewModal(false); setEditingReview(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa' }}><X size={18}/></button>
+            </div>
+            <form onSubmit={saveReview}>
+              <div style={{ display: 'grid', gap: '13px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '7px', fontSize: '13px', fontWeight: '600' }}>דירוג</label>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {[1,2,3,4,5].map(s => (
+                      <button key={s} type="button" onClick={() => setReviewForm({...reviewForm, stars: s})} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px', color: s <= reviewForm.stars ? G : '#ddd', padding: '0 1px' }}>★</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>טקסט *</label>
+                  <textarea value={reviewForm.text} onChange={e => setReviewForm({...reviewForm, text: e.target.value})} rows="4" style={{ ...inp, resize: 'vertical' }} required></textarea>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" style={{ flex: 1, ...btn(G, BK, { padding: '11px', justifyContent: 'center' }) }}>
+                    {editingReview ? 'שמור' : 'הוסף'}
+                  </button>
+                  <button type="button" onClick={() => { setShowReviewModal(false); setEditingReview(null); }} style={{ ...btn(BG, BK, { padding: '11px 14px', border: `1px solid ${BR}` }) }}>ביטול</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Coupon Modal */}
+      {showCouponModal && (
+        <div className="modal-overlay" onClick={() => { setShowCouponModal(false); setEditingCoupon(null); }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '460px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700' }}>{editingCoupon ? 'עריכת קופון' : 'קופון חדש'}</div>
+              <button onClick={() => { setShowCouponModal(false); setEditingCoupon(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa' }}><X size={18}/></button>
+            </div>
+            <form onSubmit={saveCoupon}>
+              <div style={{ display: 'grid', gap: '13px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>קוד קופון *</label>
+                  <input value={couponForm.code} onChange={e => setCouponForm({...couponForm, code: e.target.value.toUpperCase()})} style={{ ...inp, letterSpacing: '2px', fontWeight: '700' }} placeholder="SUMMER20" required />
+                  <div style={{ fontSize: '11px', color: '#bbb', marginTop: '3px' }}>הקוד יהפוך לאותיות גדולות אוטומטית</div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '7px', fontSize: '13px', fontWeight: '600' }}>סוג הנחה</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[['percentage', 'אחוזים (%)'], ['fixed', 'סכום קבוע (₪)']].map(([v, l]) => (
+                      <label key={v} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 12px', background: couponForm.discount_type === v ? BK : BG, borderRadius: '8px', cursor: 'pointer', border: `1px solid ${couponForm.discount_type === v ? BK : BR}` }}>
+                        <input type="radio" name="dtype" value={v} checked={couponForm.discount_type === v} onChange={e => setCouponForm({...couponForm, discount_type: e.target.value})} style={{ width: 'auto', accentColor: G }} />
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: couponForm.discount_type === v ? WH : BK }}>{l}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>
+                      {couponForm.discount_type === 'percentage' ? 'אחוז הנחה *' : 'סכום (₪) *'}
+                    </label>
+                    <input type="number" min="1" value={couponForm.discount_value} onChange={e => setCouponForm({...couponForm, discount_value: e.target.value})} style={inp} required />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>מינימום הזמנה (₪)</label>
+                    <input type="number" value={couponForm.min_order} onChange={e => setCouponForm({...couponForm, min_order: e.target.value})} style={inp} placeholder="0" />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>תוקף עד (אופציונלי)</label>
+                  <input type="date" value={couponForm.expires_at} onChange={e => setCouponForm({...couponForm, expires_at: e.target.value})} style={inp} />
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={couponForm.is_active} onChange={e => setCouponForm({...couponForm, is_active: e.target.checked})} style={{ width: 'auto', accentColor: G }} />
+                  <span style={{ fontSize: '13px', fontWeight: '600' }}>קופון פעיל</span>
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" style={{ flex: 1, ...btn(G, BK, { padding: '11px', justifyContent: 'center' }) }}>
+                    {editingCoupon ? 'שמור שינויים' : 'הוסף קופון'}
+                  </button>
+                  <button type="button" onClick={() => { setShowCouponModal(false); setEditingCoupon(null); }} style={{ ...btn(BG, BK, { padding: '11px 14px', border: `1px solid ${BR}` }) }}>ביטול</button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

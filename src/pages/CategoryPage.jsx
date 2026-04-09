@@ -24,10 +24,9 @@ export default function CategoryPage() {
           .single()
         setCategory(categoryData)
 
-        // ✅ מושך רק מטבלת products — תמונות ב-images[]
         const { data: productsData, error: productsError } = await supabase
           .from('products')
-          .select('*')
+          .select('*, product_images(image_url, is_primary)')
           .eq('category_id', id)
           .eq('is_active', true)
           .order('created_at', { ascending: false })
@@ -65,8 +64,10 @@ export default function CategoryPage() {
         ) : (
           <>
             <div className="mb-16 text-center">
-              <h2 className="text-4xl md:text-5xl font-bold text-black mb-4"
-                style={{ fontFamily: "'Frank Ruhl Libre', serif" }}>
+              <h2
+                className="text-4xl md:text-5xl font-bold text-black mb-4"
+                style={{ fontFamily: "'Frank Ruhl Libre', serif" }}
+              >
                 {category?.name || 'המוצרים שלנו'}
               </h2>
               <div className="h-1 w-20 bg-[#D4AF37] mx-auto"></div>
@@ -75,8 +76,10 @@ export default function CategoryPage() {
             {products.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
                 {products.map((product) => {
-                  // ✅ קריאה מ-images[] array
-                  const imgUrl = product.images?.[0] || product.main_image_url || ''
+                  const imgUrl =
+                    product.product_images?.find(i => i.is_primary)?.image_url ||
+                    product.product_images?.[0]?.image_url ||
+                    ''
 
                   return (
                     <div key={product.id} className="group relative">
@@ -121,8 +124,10 @@ export default function CategoryPage() {
                           <p className="text-xs text-gray-400 font-light mb-1 tracking-widest uppercase">
                             {category?.name}
                           </p>
-                          <h3 className="text-base text-black font-bold mb-2 line-clamp-2"
-                            style={{ fontFamily: "'Frank Ruhl Libre', serif" }}>
+                          <h3
+                            className="text-base text-black font-bold mb-2 line-clamp-2"
+                            style={{ fontFamily: "'Frank Ruhl Libre', serif" }}
+                          >
                             {product.name}
                           </h3>
                           {product.sale_price ? (

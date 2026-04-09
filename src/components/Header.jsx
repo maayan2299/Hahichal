@@ -11,6 +11,9 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('')
   const [categories, setCategories] = useState([])
   const [announcementIdx, setAnnouncementIdx] = useState(0)
+  const [activeDropdown, setActiveDropdown] = useState(null)
+  const [mobileDropdown, setMobileDropdown] = useState(null)
+  const [closeTimeout, setCloseTimeout] = useState(null)
   const { getItemCount, setIsCartOpen } = useCart()
 
   const announcements = [
@@ -21,38 +24,59 @@ export default function Header() {
 
   useEffect(() => {
     async function fetchCategories() {
-      const { data } = await supabase.from('categories').select('*').order('display_order')
+      const { data } = await supabase
+        .from('categories')
+        .select('*')
+        .order('display_order')
       if (data) setCategories(data)
     }
     fetchCategories()
+
     const handleScroll = () => setScrolled(window.scrollY > 60)
     window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+
+    const announcementInterval = setInterval(() => {
+      setAnnouncementIdx(prev => (prev + 1) % announcements.length)
+    }, 4000)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      clearInterval(announcementInterval)
+    }
   }, [])
+
+  const parentCategories = categories.filter(c => c.is_parent)
+  const getSubcategories = (parentId) =>
+    categories.filter(c => c.parent_id?.toString() === parentId?.toString())
+  const regularCategories = categories.filter(c => !c.is_parent && !c.parent_id)
+  const navItems = [...parentCategories, ...regularCategories]
+
+  const handleMouseEnter = (id) => {
+    if (closeTimeout) { clearTimeout(closeTimeout); setCloseTimeout(null) }
+    setActiveDropdown(id)
+  }
+
+  const handleMouseLeave = () => {
+    const t = setTimeout(() => setActiveDropdown(null), 300)
+    setCloseTimeout(t)
+  }
+
+  const navFont = { fontFamily: "'Shofar', serif", fontSize: '18px' }
 
   return (
     <>
-      {/* Header קבוע */}
-      <div
-        style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}
-        className={`transition-all duration-500 ${scrolled ? 'bg-black shadow-lg' : 'bg-white'}`}
-      >
-        {/* שורה 1 — פס הכרזה עם חצים */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}
+        className={`transition-all duration-500 ${scrolled ? 'bg-black shadow-lg' : 'bg-white'}`}>
+
+        {/* פס הכרזה */}
         <div className="border-b border-[#b8944a]/40 overflow-hidden relative"
           style={{ background: scrolled ? '#111' : 'linear-gradient(90deg, #7A5500 0%, #EED072 15%, #CFAA52 35%, #FBF6B8 50%, #CFAA52 65%, #EED072 85%, #7A5500 100%)' }}>
-          
-          {/* ניצוץ נע */}
           {!scrolled && <div className="absolute inset-y-0 w-1/4 opacity-50 pointer-events-none"
             style={{ background: 'linear-gradient(90deg, transparent, #FFFDE0, transparent)', animation: 'shimmer 2.5s ease-in-out infinite' }} />}
-          
-          {/* ברק בצדדים */}
           {!scrolled && <>
-            <div className="absolute inset-y-0 left-0 w-20 opacity-70 pointer-events-none"
-              style={{ background: 'linear-gradient(90deg, #FBF6B8, transparent)' }} />
-            <div className="absolute inset-y-0 right-0 w-20 opacity-70 pointer-events-none"
-              style={{ background: 'linear-gradient(270deg, #FBF6B8, transparent)' }} />
+            <div className="absolute inset-y-0 left-0 w-20 opacity-70 pointer-events-none" style={{ background: 'linear-gradient(90deg, #FBF6B8, transparent)' }} />
+            <div className="absolute inset-y-0 right-0 w-20 opacity-70 pointer-events-none" style={{ background: 'linear-gradient(270deg, #FBF6B8, transparent)' }} />
           </>}
-
           <div className="flex items-center justify-between max-w-7xl mx-auto px-6 py-2 relative z-10">
             <button onClick={() => setAnnouncementIdx(i => (i - 1 + announcements.length) % announcements.length)}
               className={`p-1 transition-colors ${scrolled ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'}`}>
@@ -60,7 +84,8 @@ export default function Header() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <p className={`text-[11px] tracking-[0.25em] font-bold ${scrolled ? 'text-white' : 'text-black'}`}>
+            <p className={`tracking-[0.15em] font-bold ${scrolled ? 'text-white' : 'text-black'}`}
+              style={{ fontFamily: "'Shofar', serif", fontSize: '13px' }}>
               {announcements[announcementIdx]}
             </p>
             <button onClick={() => setAnnouncementIdx(i => (i + 1) % announcements.length)}
@@ -72,50 +97,81 @@ export default function Header() {
           </div>
         </div>
 
-        {/* שורה 2 — לוגו + ניווט + אייקונים */}
-        <div className={`transition-all duration-500 ${scrolled ? 'py-3' : 'py-4'}`}>
+        {/* לוגו + ניווט + אייקונים */}
+        <div className={`transition-all duration-500 ${scrolled ? 'py-5' : 'py-8'}`}>
           <div className="max-w-7xl mx-auto px-6 flex items-center justify-between gap-4">
 
-            {/* ימין — לוגו / כיתוב */}
-            <Link to="/" className="flex-shrink-0 min-w-[100px] flex justify-end">
+            {/* לוגו */}
+            <Link to="/" className="flex-shrink-0 min-w-[140px] flex justify-end">
               {scrolled ? (
-                <span className="text-2xl font-bold text-white tracking-wide"
-                  style={{ fontFamily: "'Frank Ruhl Libre', serif" }}>
-                  ההיכל
-                </span>
+                <span className="text-3xl font-bold text-white tracking-wide"
+                  style={{ fontFamily: "'Shofar', serif" }}>ההיכל</span>
               ) : (
-                <img
-                  src={logoImg}
-                  alt="ההיכל"
-                  className="h-14 w-auto object-contain"
-                />
+                <img src={logoImg} alt="ההיכל" className="h-20 w-auto object-contain" />
               )}
             </Link>
 
-            {/* מרכז — ניווט */}
+            {/* ניווט דסקטופ */}
             <nav className="hidden lg:flex items-center gap-x-6 flex-1 justify-center">
-              {categories.map((cat) => (
-                <Link key={cat.id} to={`/category/${cat.id}`}
-                  className={`text-[13px] font-medium transition-colors relative group whitespace-nowrap
-                    ${scrolled ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
-                  {cat.name}
-                  <span className="absolute -bottom-0.5 right-0 w-0 h-px bg-[#D4AF37] transition-all duration-300 group-hover:w-full" />
-                </Link>
-              ))}
+              {navItems.map((cat) => {
+                const subs = getSubcategories(cat.id)
+                const hasDropdown = cat.is_parent && subs.length > 0
+
+                if (hasDropdown) {
+                  return (
+                    <div key={cat.id} className="relative"
+                      onMouseEnter={() => handleMouseEnter(cat.id)}
+                      onMouseLeave={handleMouseLeave}>
+                      <button style={navFont}
+                        className={`font-medium transition-colors flex items-center gap-1 whitespace-nowrap
+                          ${scrolled ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+                        {cat.name}
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+
+                      {activeDropdown === cat.id && (
+                        <div className={`absolute top-full right-0 mt-2 w-56 rounded-md shadow-xl py-2 z-50 border
+                          ${scrolled ? 'bg-[#1a1a1a] border-white/10' : 'bg-white border-gray-100'}`}>
+                          {subs.map((sub) => (
+                            <Link key={sub.id} to={`/category/${sub.id}`}
+                              style={navFont}
+                              className={`block px-6 py-3 text-sm transition-colors text-right
+                                ${scrolled ? 'text-white/80 hover:bg-white/10 hover:text-white' : 'text-gray-700 hover:bg-[#D4AF37]/10 hover:text-[#D4AF37]'}`}>
+                              {sub.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+
+                return (
+                  <Link key={cat.id} to={`/category/${cat.id}`}
+                    style={navFont}
+                    className={`font-medium transition-colors relative group whitespace-nowrap
+                      ${scrolled ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+                    {cat.name}
+                    <span className="absolute -bottom-0.5 right-0 w-0 h-px bg-[#D4AF37] transition-all duration-300 group-hover:w-full" />
+                  </Link>
+                )
+              })}
             </nav>
 
-            {/* שמאל — אייקונים */}
+            {/* אייקונים */}
             <div className="flex items-center gap-1 flex-shrink-0">
               <button onClick={() => setSearchOpen(!searchOpen)}
-                className={`p-2.5 transition-colors ${scrolled ? 'text-white/70 hover:text-white' : 'text-gray-500 hover:text-black'}`}>
-                <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                className={`p-3 transition-colors ${scrolled ? 'text-white/70 hover:text-white' : 'text-gray-500 hover:text-black'}`}>
+                <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="M21 21l-4.35-4.35" />
                 </svg>
               </button>
 
               <button onClick={() => setIsCartOpen(true)}
-                className={`relative p-2.5 transition-colors ${scrolled ? 'text-white/70 hover:text-white' : 'text-gray-500 hover:text-black'}`}>
-                <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                className={`relative p-3 transition-colors ${scrolled ? 'text-white/70 hover:text-white' : 'text-gray-500 hover:text-black'}`}>
+                <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
                 {getItemCount() > 0 && (
@@ -126,8 +182,8 @@ export default function Header() {
               </button>
 
               <button onClick={() => setMobileMenuOpen(true)}
-                className={`p-2.5 lg:hidden transition-colors ${scrolled ? 'text-white/70 hover:text-white' : 'text-gray-500 hover:text-black'}`}>
-                <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                className={`p-3 lg:hidden transition-colors ${scrolled ? 'text-white/70 hover:text-white' : 'text-gray-500 hover:text-black'}`}>
+                <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
@@ -141,6 +197,7 @@ export default function Header() {
                 <input autoFocus type="text" value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="חיפוש מוצרים..."
+                  style={navFont}
                   className={`w-full border px-4 py-2.5 text-sm focus:outline-none pr-10 text-right
                     ${scrolled ? 'bg-white/10 border-white/20 text-white placeholder-white/40 focus:border-white' : 'border-gray-200 focus:border-black'}`}
                 />
@@ -156,14 +213,13 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Spacer — כדי שהתוכן לא יוסתר מתחת לheader */}
       <div className="h-[88px]" />
 
       {/* תפריט נייד */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[60] lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute top-0 right-0 h-full w-4/5 max-w-sm bg-white shadow-2xl p-8">
+          <div className="absolute top-0 right-0 h-full w-4/5 max-w-sm bg-white shadow-2xl p-8 overflow-y-auto">
             <div className="flex justify-between items-center mb-10 pb-4 border-b border-gray-100">
               <img src={logoImg} alt="ההיכל" className="h-10 w-auto" />
               <button onClick={() => setMobileMenuOpen(false)} className="text-gray-400 hover:text-black">
@@ -172,14 +228,49 @@ export default function Header() {
                 </svg>
               </button>
             </div>
-            <nav className="flex flex-col gap-5">
-              {categories.map((cat) => (
-                <Link key={cat.id} to={`/category/${cat.id}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-lg font-medium text-gray-700 hover:text-[#D4AF37] transition-colors">
-                  {cat.name}
-                </Link>
-              ))}
+            <nav className="flex flex-col gap-3">
+              {navItems.map((cat) => {
+                const subs = getSubcategories(cat.id)
+                const hasDropdown = cat.is_parent && subs.length > 0
+
+                if (hasDropdown) {
+                  return (
+                    <div key={cat.id}>
+                      <button
+                        onClick={() => setMobileDropdown(mobileDropdown === cat.id ? null : cat.id)}
+                        style={navFont}
+                        className="w-full flex items-center justify-between font-medium text-gray-700 hover:text-[#D4AF37] transition-colors py-2">
+                        {cat.name}
+                        <svg className={`w-4 h-4 transition-transform ${mobileDropdown === cat.id ? 'rotate-180' : ''}`}
+                          fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      {mobileDropdown === cat.id && (
+                        <div className="mr-4 space-y-2 mt-2">
+                          {subs.map((sub) => (
+                            <Link key={sub.id} to={`/category/${sub.id}`}
+                              onClick={() => setMobileMenuOpen(false)}
+                              style={navFont}
+                              className="block text-gray-600 hover:text-[#D4AF37] transition-colors py-1">
+                              {sub.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+
+                return (
+                  <Link key={cat.id} to={`/category/${cat.id}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={navFont}
+                    className="font-medium text-gray-700 hover:text-[#D4AF37] transition-colors py-2">
+                    {cat.name}
+                  </Link>
+                )
+              })}
             </nav>
           </div>
         </div>

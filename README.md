@@ -1,4 +1,4 @@
-# Nerlya Judaica - Luxury Judaica Store
+# ההיכל Judaica - Luxury Judaica Store
 
 A professional React + Vite e-commerce application for a luxury Judaica store, featuring elegant design inspired by premium Judaica retailers.
 

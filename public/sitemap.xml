@@ -3,87 +3,87 @@
   
   <!-- דף הבית -->
   <url>
-    <loc>https://nerlya.com/</loc>
+    <loc>https://ההיכל.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   
   <!-- קטגוריות -->
   <url>
-    <loc>https://nerlya.com/category/prayers</loc>
+    <loc>https://ההיכל.com/category/prayers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://nerlya.com/category/tallit-covers</loc>
+    <loc>https://ההיכל.com/category/tallit-covers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://nerlya.com/category/natlot</loc>
+    <loc>https://ההיכל.com/category/natlot</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://nerlya.com/category/candlesticks</loc>
+    <loc>https://ההיכל.com/category/candlesticks</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://nerlya.com/category/wine-cups</loc>
+    <loc>https://ההיכל.com/category/wine-cups</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://nerlya.com/category/salt-shakers</loc>
+    <loc>https://ההיכל.com/category/salt-shakers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://nerlya.com/category/havdalah</loc>
+    <loc>https://ההיכל.com/category/havdalah</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://nerlya.com/category/plaster</loc>
+    <loc>https://ההיכל.com/category/plaster</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://nerlya.com/category/other</loc>
+    <loc>https://ההיכל.com/category/other</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- דוגמאות מוצרים - Google ימשיך לסרוק את השאר -->
   <url>
-    <loc>https://nerlya.com/product/110</loc>
+    <loc>https://ההיכל.com/product/110</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://nerlya.com/product/111</loc>
+    <loc>https://ההיכל.com/product/111</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://nerlya.com/product/112</loc>
+    <loc>https://ההיכל.com/product/112</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://nerlya.com/product/113</loc>
+    <loc>https://ההיכל.com/product/113</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

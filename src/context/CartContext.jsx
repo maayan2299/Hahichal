@@ -16,7 +16,7 @@ export function CartProvider({ children }) {
 
   // טען עגלה מ-localStorage בטעינה ראשונה
   useEffect(() => {
-    const savedCart = localStorage.getItem('nerlya-cart')
+    const savedCart = localStorage.getItem('ההיכל-cart')
     if (savedCart) {
       try {
         setCart(JSON.parse(savedCart))
@@ -28,7 +28,7 @@ export function CartProvider({ children }) {
 
   // שמור עגלה ל-localStorage כשהיא משתנה
   useEffect(() => {
-    localStorage.setItem('nerlya-cart', JSON.stringify(cart))
+    localStorage.setItem('ההיכל-cart', JSON.stringify(cart))
   }, [cart])
 
   // הוסף מוצר לעגלה (עם תמיכה בחריטה חכמה!)

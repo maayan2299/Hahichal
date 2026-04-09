@@ -145,7 +145,7 @@ export default function CheckoutPage() {
       if (formData.shippingMethod === 'pickup') {
         successMessage += 'ההזמנה תהיה מוכנה לאיסוף עצמי מבת-ים בעוד 5-7 ימי עסקים.\n\n'
       }
-      successMessage += 'נציג יצור איתך קשר בהקדם.\n\nתודה שבחרת בנר-ליה!'
+      successMessage += 'נציג יצור איתך קשר בהקדם.\n\nתודה שבחרת בההיכל!'
       
       alert(successMessage)
       
