@@ -33,6 +33,7 @@ export default function CheckoutPage() {
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [marketingConsent, setMarketingConsent] = useState(false)
 
   const breadcrumbItems = [
     { label: 'עמוד הבית', link: '/' },
@@ -132,6 +133,7 @@ export default function CheckoutPage() {
         },
         notes: formData.notes,
         blessing: formData.blessing,
+        marketingConsent,
         date: new Date().toISOString()
       }
 
@@ -395,6 +397,21 @@ export default function CheckoutPage() {
                   className="w-full border-2 border-gray-300 p-3 focus:border-black focus:outline-none transition-colors"
                   placeholder="הוראות מיוחדות למשלוח, זמן מועדף וכו' (אופציונלי)"
                 />
+              </div>
+
+              {/* הסכמה לדיוור */}
+              <div className="bg-white border border-gray-200 p-6">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={marketingConsent}
+                    onChange={e => setMarketingConsent(e.target.checked)}
+                    className="mt-1 w-4 h-4 accent-black flex-shrink-0"
+                  />
+                  <span className="text-sm text-gray-700">
+                    אני מסכים/ה לקבל עדכונים, מבצעים וחדשות מההיכל בדוא"ל (ניתן לבטל בכל עת)
+                  </span>
+                </label>
               </div>
 
               {/* כפתורי פעולה */}

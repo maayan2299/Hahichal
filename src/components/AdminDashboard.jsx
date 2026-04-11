@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Plus, Trash2, X, LogOut, Eye, EyeOff, Search, Star, Settings, Image, Package, Tag, Award, Grid, MessageSquare, Percent, Bell, AlertTriangle, Edit, Upload } from 'lucide-react';
+import { Plus, Trash2, X, LogOut, Eye, EyeOff, Search, Star, Settings, Image, Package, Tag, Award, Grid, MessageSquare, Percent, Bell, AlertTriangle, Edit, Upload, Truck } from 'lucide-react';
 
 const supabaseUrl = 'https://taewbxptprdixsusvjfh.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhZXdieHB0cHJkaXhzdXN2amZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNDk0MjIsImV4cCI6MjA4NjgyNTQyMn0.TVgjzOt3UQW8FQVFk0Ze5Se2qOwS-WpqTSDHJlkIrFc';
@@ -133,8 +133,30 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     name: '', price: '', description: '', category_id: '',
     stock_quantity: 0, allows_engraving: false, engraving_types: [],
     is_featured: false, on_sale: false, sale_type: 'percentage',
-    sale_percentage: '', sale_price: '', dimensions: '', material: ''
+    sale_percentage: '', sale_price: '', dimensions: '', material: '',
+    complementary_ids: [], product_options: []
   });
+
+  // הגדרות משלוח
+  const DEFAULT_SHIPPING = {
+    standard: { name: 'משלוח רגיל', description: '5-7 ימי עסקים', price: 35, free_above: 400, enabled: true },
+    express: { name: 'משלוח מהיר', description: '1-2 ימי עסקים', price: 60, enabled: true },
+    pickup: { name: 'איסוף עצמי מבת-ים', description: 'ללא עלות', price: 0, enabled: true }
+  };
+  const DEFAULT_BRANDING = {
+    engraving: { price: 10, text_limit: 30 },
+    embroidery: { price: 40, text_limit: 50 },
+    embossing: { price: 15, text_limit: 30 },
+    printing: { price: 8, text_limit: 100 }
+  };
+  const [shippingSettings, setShippingSettings] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('heichal_shipping_settings')) || DEFAULT_SHIPPING; } catch { return DEFAULT_SHIPPING; }
+  });
+  const [brandingSettings, setBrandingSettings] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('heichal_branding_settings')) || DEFAULT_BRANDING; } catch { return DEFAULT_BRANDING; }
+  });
+  const [whatsappNumber, setWhatsappNumber] = useState(() => localStorage.getItem('heichal_whatsapp') || '972501234567');
+  const [instagramName, setInstagramName] = useState(() => localStorage.getItem('heichal_instagram') || '');
 
   const [productImages, setProductImages] = useState([]);
   const [productColors, setProductColors] = useState([]);
@@ -207,7 +229,9 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       sale_percentage: productForm.on_sale && productForm.sale_type === 'percentage' ? parseInt(productForm.sale_percentage) : null,
       sale_price: salePrice,
       dimensions: productForm.dimensions || null,
-      material: productForm.material || null
+      material: productForm.material || null,
+      complementary_ids: productForm.complementary_ids?.length > 0 ? productForm.complementary_ids : null,
+      product_options: productForm.product_options?.length > 0 ? productForm.product_options : null
     };
     try {
       if (editingProduct) {
@@ -249,12 +273,14 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       engraving_types: Array.isArray(product.engraving_type) ? product.engraving_type : (product.engraving_type ? [product.engraving_type] : []),
       is_featured: product.is_featured || false, on_sale: product.on_sale || false,
       sale_type: product.sale_type || 'percentage', sale_percentage: product.sale_percentage || '',
-      sale_price: product.sale_price || '', dimensions: product.dimensions || '', material: product.material || ''
+      sale_price: product.sale_price || '', dimensions: product.dimensions || '', material: product.material || '',
+      complementary_ids: product.complementary_ids || [], product_options: product.product_options || []
     } : {
       name: '', price: '', description: '', category_id: prefillCat,
       stock_quantity: 0, allows_engraving: false, engraving_types: [],
       is_featured: false, on_sale: false, sale_type: 'percentage',
-      sale_percentage: '', sale_price: '', dimensions: '', material: ''
+      sale_percentage: '', sale_price: '', dimensions: '', material: '',
+      complementary_ids: [], product_options: []
     });
     setNewImageFile(null);
     setShowProductModal(true);
@@ -389,6 +415,77 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     }
   };
 
+  // ── SETTINGS ──
+  const saveStoreSettings = () => {
+    localStorage.setItem('heichal_shipping_settings', JSON.stringify(shippingSettings));
+    localStorage.setItem('heichal_branding_settings', JSON.stringify(brandingSettings));
+    localStorage.setItem('heichal_whatsapp', whatsappNumber);
+    localStorage.setItem('heichal_instagram', instagramName);
+    alert('ההגדרות נשמרו!');
+  };
+
+  const updateShipping = (method, field, value) => {
+    setShippingSettings(prev => ({ ...prev, [method]: { ...prev[method], [field]: value } }));
+  };
+  const updateBranding = (type, field, value) => {
+    setBrandingSettings(prev => ({ ...prev, [type]: { ...prev[type], [field]: value } }));
+  };
+
+  // אפשרויות מוצר (ווריאנטים)
+  const addProductOption = () => {
+    setProductForm(prev => ({
+      ...prev,
+      product_options: [...(prev.product_options || []), { name: '', required: false, values: [] }]
+    }));
+  };
+  const updateProductOption = (idx, field, value) => {
+    setProductForm(prev => {
+      const opts = [...(prev.product_options || [])];
+      opts[idx] = { ...opts[idx], [field]: value };
+      return { ...prev, product_options: opts };
+    });
+  };
+  const removeProductOption = (idx) => {
+    setProductForm(prev => ({
+      ...prev,
+      product_options: prev.product_options.filter((_, i) => i !== idx)
+    }));
+  };
+  const addOptionValue = (optIdx) => {
+    setProductForm(prev => {
+      const opts = [...(prev.product_options || [])];
+      opts[optIdx] = { ...opts[optIdx], values: [...(opts[optIdx].values || []), { label: '', price_delta: 0 }] };
+      return { ...prev, product_options: opts };
+    });
+  };
+  const updateOptionValue = (optIdx, valIdx, field, value) => {
+    setProductForm(prev => {
+      const opts = [...(prev.product_options || [])];
+      const vals = [...(opts[optIdx].values || [])];
+      vals[valIdx] = { ...vals[valIdx], [field]: field === 'price_delta' ? parseFloat(value) || 0 : value };
+      opts[optIdx] = { ...opts[optIdx], values: vals };
+      return { ...prev, product_options: opts };
+    });
+  };
+  const removeOptionValue = (optIdx, valIdx) => {
+    setProductForm(prev => {
+      const opts = [...(prev.product_options || [])];
+      opts[optIdx] = { ...opts[optIdx], values: opts[optIdx].values.filter((_, i) => i !== valIdx) };
+      return { ...prev, product_options: opts };
+    });
+  };
+  const toggleComplementary = (productId) => {
+    setProductForm(prev => {
+      const ids = prev.complementary_ids || [];
+      return {
+        ...prev,
+        complementary_ids: ids.includes(productId)
+          ? ids.filter(id => id !== productId)
+          : [...ids, productId]
+      };
+    });
+  };
+
   // ── BANNER & LOGO ──
   const uploadBanner = async () => {
     if (!bannerFile) return;
@@ -434,6 +531,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     { id: 'coupons', label: 'קופונים', icon: <Percent size={15}/> },
     { id: 'popup', label: 'פופ-אפ', icon: <Bell size={15}/> },
     { id: 'banner', label: 'באנר/לוגו', icon: <Image size={15}/> },
+    { id: 'shipping', label: 'משלוחים', icon: <Truck size={15}/> },
     { id: 'settings', label: 'הגדרות', icon: <Settings size={15}/> },
   ];
 
@@ -1000,11 +1098,69 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
           </div>
         )}
 
+        {/* SHIPPING */}
+        {tab === 'shipping' && (
+          <div style={{ maxWidth: '700px' }}>
+            <div style={{ ...card, padding: '28px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '17px', fontWeight: '700', color: BK, marginBottom: '6px' }}>אפשרויות משלוח</div>
+              <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '22px' }}>הגדר את שיטות המשלוח ומחיריהן</div>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {[
+                  { key: 'standard', label: 'משלוח רגיל', icon: '📦', showFree: true },
+                  { key: 'express', label: 'משלוח מהיר', icon: '🚀', showFree: false },
+                  { key: 'pickup', label: 'איסוף עצמי', icon: '🏪', showFree: false },
+                ].map(({ key, label, icon, showFree }) => (
+                  <div key={key} style={{ background: BG, borderRadius: '10px', padding: '16px', border: `1px solid ${BR}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: BK }}>{icon} {label}</div>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={shippingSettings[key]?.enabled !== false} onChange={e => updateShipping(key, 'enabled', e.target.checked)} style={{ width: 'auto', accentColor: G }} />
+                        <span style={{ fontSize: '12px', fontWeight: '600' }}>פעיל</span>
+                      </label>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: showFree ? '1fr 1fr 1fr' : '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>שם</label>
+                        <input value={shippingSettings[key]?.name || ''} onChange={e => updateShipping(key, 'name', e.target.value)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>תיאור</label>
+                        <input value={shippingSettings[key]?.description || ''} onChange={e => updateShipping(key, 'description', e.target.value)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                      </div>
+                      {showFree ? (
+                        <>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מחיר (₪)</label>
+                            <input type="number" value={shippingSettings[key]?.price ?? ''} onChange={e => updateShipping(key, 'price', parseFloat(e.target.value) || 0)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                          </div>
+                          <div style={{ gridColumn: '1 / -1' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>משלוח חינם מעל (₪)</label>
+                            <input type="number" value={shippingSettings[key]?.free_above ?? ''} onChange={e => updateShipping(key, 'free_above', parseFloat(e.target.value) || 0)} style={{ ...inp, padding: '9px 12px', fontSize: '13px', maxWidth: '200px' }} />
+                          </div>
+                        </>
+                      ) : key !== 'pickup' && (
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מחיר (₪)</label>
+                          <input type="number" value={shippingSettings[key]?.price ?? ''} onChange={e => updateShipping(key, 'price', parseFloat(e.target.value) || 0)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <button onClick={() => { localStorage.setItem('heichal_shipping_settings', JSON.stringify(shippingSettings)); alert('הגדרות משלוח נשמרו!'); }} style={{ ...btn(G, BK, { padding: '13px', justifyContent: 'center', fontSize: '14px', width: '100%' }) }}>
+                  <Truck size={15}/> שמור הגדרות משלוח
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* SETTINGS */}
         {tab === 'settings' && (
-          <div style={{ maxWidth: '560px' }}>
+          <div style={{ display: 'grid', gap: '20px', maxWidth: '700px' }}>
+            {/* פרטי חנות */}
             <div style={{ ...card, padding: '28px' }}>
-              <div style={{ fontSize: '17px', fontWeight: '700', color: BK, marginBottom: '22px' }}>הגדרות החנות</div>
+              <div style={{ fontSize: '17px', fontWeight: '700', color: BK, marginBottom: '22px' }}>פרטי החנות</div>
               <div style={{ display: 'grid', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: BK }}>שם החנות</label>
@@ -1012,21 +1168,47 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: BK }}>מספר וואטסאפ</label>
-                  <input style={inp} placeholder="972501234567" />
-                  <div style={{ fontSize: '11px', color: '#bbb', marginTop: '4px' }}>ללא + ומקפים</div>
+                  <input value={whatsappNumber} onChange={e => setWhatsappNumber(e.target.value)} style={inp} placeholder="972501234567" />
+                  <div style={{ fontSize: '11px', color: '#bbb', marginTop: '4px' }}>ללא + ומקפים — מספר זה ישמש לכפתור הוואטסאפ הצף</div>
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: BK }}>שם אינסטגרם</label>
-                  <input style={inp} placeholder="hahiechal_judaica" />
+                  <input value={instagramName} onChange={e => setInstagramName(e.target.value)} style={inp} placeholder="hahiechal_judaica" />
                 </div>
-                <div style={{ background: '#fffbf0', border: `1px solid ${G}`, borderRadius: '8px', padding: '12px', fontSize: '12px', color: '#8a6d00' }}>
-                  💡 לאחר שמירה, עדכן את הערכים גם בקוד — Header.jsx ו-Footer.jsx
-                </div>
-                <button onClick={() => alert('נשמר!')} style={{ ...btn(G, BK, { padding: '12px', justifyContent: 'center', fontSize: '14px', width: '100%' }) }}>
-                  שמור הגדרות
-                </button>
               </div>
             </div>
+
+            {/* הגדרות מיתוג */}
+            <div style={{ ...card, padding: '28px' }}>
+              <div style={{ fontSize: '17px', fontWeight: '700', color: BK, marginBottom: '6px' }}>הגדרות מיתוג והתאמה אישית</div>
+              <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '18px' }}>הגדר מחיר ומגבלת תווים לכל סוג מיתוג</div>
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {[
+                  { key: 'engraving', label: 'חריטה', icon: '✍️' },
+                  { key: 'embroidery', label: 'רקמה', icon: '🧵' },
+                  { key: 'embossing', label: 'הטבעה', icon: '🔏' },
+                  { key: 'printing', label: 'הדפסה', icon: '🖨️' },
+                ].map(({ key, label, icon }) => (
+                  <div key={key} style={{ background: BG, borderRadius: '10px', padding: '14px', border: `1px solid ${BR}` }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: BK, marginBottom: '10px' }}>{icon} {label}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מחיר (₪)</label>
+                        <input type="number" min="0" value={brandingSettings[key]?.price ?? ''} onChange={e => updateBranding(key, 'price', parseFloat(e.target.value) || 0)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מגבלת תווים</label>
+                        <input type="number" min="1" max="500" value={brandingSettings[key]?.text_limit ?? ''} onChange={e => updateBranding(key, 'text_limit', parseInt(e.target.value) || 30)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={saveStoreSettings} style={{ ...btn(G, BK, { padding: '13px', justifyContent: 'center', fontSize: '14px', width: '100%' }) }}>
+              <Settings size={15}/> שמור את כל ההגדרות
+            </button>
           </div>
         )}
       </div>
@@ -1202,6 +1384,59 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                         </div>
                       )}
                     </div>
+                  )}
+                </div>
+
+                {/* אפשרויות מוצר (ווריאנטים) */}
+                <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: BK }}>📐 אפשרויות מוצר (גדלים / ווריאנטים)</div>
+                    <button type="button" onClick={addProductOption} style={{ ...btn(BK, WH, { padding: '5px 10px', fontSize: '11px' }) }}><Plus size={11}/> הוסף אפשרות</button>
+                  </div>
+                  {(productForm.product_options || []).length === 0 && (
+                    <div style={{ fontSize: '11px', color: '#bbb', textAlign: 'center', padding: '8px' }}>לא הוגדרו אפשרויות — לחץ "הוסף אפשרות" להוספה</div>
+                  )}
+                  {(productForm.product_options || []).map((opt, optIdx) => (
+                    <div key={optIdx} style={{ background: WH, borderRadius: '8px', padding: '12px', border: `1px solid ${BR}`, marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                        <input value={opt.name} onChange={e => updateProductOption(optIdx, 'name', e.target.value)} placeholder='שם האפשרות, למשל "גודל"' style={{ ...inp, flex: 1, padding: '8px 10px', fontSize: '12px' }} />
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          <input type="checkbox" checked={opt.required || false} onChange={e => updateProductOption(optIdx, 'required', e.target.checked)} style={{ width: 'auto', accentColor: G }} />
+                          חובה
+                        </label>
+                        <button type="button" onClick={() => removeProductOption(optIdx)} style={{ ...btn(WH, '#dc2626', { padding: '5px 6px', border: '1px solid #fca5a5' }) }}><Trash2 size={12}/></button>
+                      </div>
+                      <div style={{ display: 'grid', gap: '5px', marginBottom: '6px' }}>
+                        {(opt.values || []).map((val, valIdx) => (
+                          <div key={valIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <input value={val.label} onChange={e => updateOptionValue(optIdx, valIdx, 'label', e.target.value)} placeholder='ערך, למשל "10 ס"מ"' style={{ ...inp, flex: 2, padding: '7px 10px', fontSize: '12px' }} />
+                            <input type="number" value={val.price_delta} onChange={e => updateOptionValue(optIdx, valIdx, 'price_delta', e.target.value)} placeholder="הפרש מחיר" style={{ ...inp, width: '100px', padding: '7px 10px', fontSize: '12px' }} />
+                            <span style={{ fontSize: '11px', color: '#aaa', whiteSpace: 'nowrap' }}>₪ נוסף</span>
+                            <button type="button" onClick={() => removeOptionValue(optIdx, valIdx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', padding: '2px' }}><X size={13}/></button>
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => addOptionValue(optIdx)} style={{ ...btn(BG, '#666', { padding: '5px 10px', fontSize: '11px', border: `1px solid ${BR}` }) }}><Plus size={10}/> הוסף ערך</button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* מוצרים משלימים */}
+                <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: BK, marginBottom: '10px' }}>🔗 מוצרים משלימים (המלצה)</div>
+                  <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px' }}>בחר מוצרים שיוצגו כהמלצה בדף המוצר הנוכחי</div>
+                  <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'grid', gap: '4px' }}>
+                    {products.filter(p => !editingProduct || p.id !== editingProduct.id).map(p => (
+                      <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', background: (productForm.complementary_ids || []).includes(p.id) ? BK : WH, borderRadius: '6px', cursor: 'pointer', border: `1px solid ${(productForm.complementary_ids || []).includes(p.id) ? BK : BR}` }}>
+                        <input type="checkbox" checked={(productForm.complementary_ids || []).includes(p.id)} onChange={() => toggleComplementary(p.id)} style={{ width: 'auto', accentColor: G }} />
+                        {p.primary_image && <img src={p.primary_image} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px' }} />}
+                        <span style={{ fontSize: '12px', fontWeight: '500', color: (productForm.complementary_ids || []).includes(p.id) ? WH : BK }}>{p.name}</span>
+                        <span style={{ fontSize: '11px', color: '#aaa', marginRight: 'auto' }}>₪{p.price}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {(productForm.complementary_ids || []).length > 0 && (
+                    <div style={{ fontSize: '11px', color: G, marginTop: '6px', fontWeight: '600' }}>✓ {(productForm.complementary_ids || []).length} מוצרים נבחרו</div>
                   )}
                 </div>
 

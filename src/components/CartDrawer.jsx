@@ -50,9 +50,9 @@ export default function CartDrawer() {
             <div className="space-y-4">
               {cart.map((item) => {
                 const itemImage = item.images?.[0] || item.main_image_url || null
-                const basePrice = parseFloat(item.sale_price || item.price) || 0
-                const engravingPrice = parseFloat(item.engravingPrice) || 0
-                const itemTotal = (basePrice + engravingPrice) * item.quantity
+                const basePrice = parseFloat(item.displayPrice || item.sale_price || item.price) || 0
+                const extraPrice = parseFloat(item.extraPrice) || 0
+                const itemTotal = (basePrice + extraPrice) * item.quantity
 
                 return (
                   <div key={item.uniqueId || item.id} className="flex gap-4 pb-4 border-b border-gray-200">
@@ -73,11 +73,15 @@ export default function CartDrawer() {
                     <div className="flex-1">
                       <h3 className="font-medium text-sm mb-1">{item.name}</h3>
                       <p className="text-sm text-gray-600">&#8362;{basePrice.toLocaleString('he-IL')}</p>
-                      {item.engravingText && (
-                        <div className="mt-1 text-xs bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-block">
-                          <span className="text-amber-700">✨ חריטת שם: </span>
-                          <span className="font-medium text-amber-900">{item.engravingText}</span>
-                          <span className="text-amber-600"> (+&#8362;{engravingPrice})</span>
+                      {item.customizations && Object.keys(item.customizations).length > 0 && (
+                        <div className="mt-1 text-xs bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                          {Object.entries(item.customizations).map(([type, data]) => (
+                            <div key={type} className="text-amber-700">
+                              ✨ {type === 'engraving' ? 'חריטה' : type === 'embroidery' ? 'רקמה' : type === 'embossing' ? 'הטבעה' : 'הדפסה'}
+                              {data.text && `: ${data.text}`}
+                            </div>
+                          ))}
+                          {extraPrice > 0 && <span className="text-amber-600">(+&#8362;{extraPrice})</span>}
                         </div>
                       )}
                       <div className="flex items-center gap-2 mt-2">

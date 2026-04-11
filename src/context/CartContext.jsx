@@ -31,61 +31,50 @@ export function CartProvider({ children }) {
     localStorage.setItem('ההיכל-cart', JSON.stringify(cart))
   }, [cart])
 
-  // הוסף מוצר לעגלה (עם תמיכה בחריטה חכמה!)
-  const addToCart = (product, quantity = 1, engravingText = null) => {
+  // הוסף מוצר לעגלה
+  // customizations = אובייקט { [type]: { text, color, checked } }
+  // extraPrice = מחיר התאמה אישית כבר מחושב
+  const addToCart = (product, quantity = 1, customizations = null, extraPrice = 0) => {
     setCart(prevCart => {
-      // צור מזהה ייחודי למוצר (כולל חריטה אם יש)
-      const uniqueId = engravingText 
-        ? `${product.id}-engraved-${engravingText}` 
-        : product.id
-      
-      // חישוב מחיר חריטה חכם לפי קטגוריה
-      let engravingPrice = 0
-      if (engravingText) {
-        // קטגוריה 4 = כיסוי טלית ותפילין = 5₪ לאות
-        if (product.category_id === 4) {
-          engravingPrice = engravingText.length * 5
-        } else {
-          // שאר הקטגוריות = מחיר קבוע
-          engravingPrice = parseFloat(product.engraving_price) || 10
-        }
-      }
-      
-      // בדוק אם המוצר (עם אותה חריטה) כבר קיים בעגלה
-      const existingItem = prevCart.find(item => {
-        if (engravingText) {
-          return item.uniqueId === uniqueId
-        }
-        return item.id === product.id && !item.engravingText
-      })
-      
+      // בדוק אם יש התאמות אמיתיות
+      const hasCustomizations = customizations && Object.keys(customizations).length > 0
+
+      // מזהה ייחודי - כולל התאמות אם יש
+      const uniqueId = hasCustomizations
+        ? `${product.id}-${JSON.stringify(customizations)}`
+        : String(product.id)
+
+      // בדוק אם כבר קיים בעגלה
+      const existingItem = prevCart.find(item => (item.uniqueId || String(item.id)) === uniqueId)
+
       if (existingItem) {
-        // אם קיים - עדכן כמות
         return prevCart.map(item =>
-          (item.uniqueId || item.id) === uniqueId
+          (item.uniqueId || String(item.id)) === uniqueId
             ? { ...item, quantity: item.quantity + quantity }
             : item
         )
       } else {
-        // אם לא קיים - הוסף חדש
-        const newItem = { 
-          ...product, 
+        const displayPrice = product.on_sale && product.sale_price
+          ? parseFloat(product.sale_price)
+          : parseFloat(product.price)
+
+        return [...prevCart, {
+          ...product,
           quantity,
           uniqueId,
-          engravingText,
-          engravingPrice
-        }
-        return [...prevCart, newItem]
+          customizations: hasCustomizations ? customizations : null,
+          extraPrice: parseFloat(extraPrice) || 0,
+          displayPrice
+        }]
       }
     })
-    
-    // פתח את מגירת העגלה
+
     setIsCartOpen(true)
   }
 
   // הסר מוצר מהעגלה
   const removeFromCart = (uniqueId) => {
-    setCart(prevCart => prevCart.filter(item => (item.uniqueId || item.id) !== uniqueId))
+    setCart(prevCart => prevCart.filter(item => (item.uniqueId || String(item.id)) !== String(uniqueId)))
   }
 
   // עדכן כמות מוצר
@@ -94,10 +83,9 @@ export function CartProvider({ children }) {
       removeFromCart(uniqueId)
       return
     }
-    
     setCart(prevCart =>
       prevCart.map(item =>
-        (item.uniqueId || item.id) === uniqueId
+        (item.uniqueId || String(item.id)) === String(uniqueId)
           ? { ...item, quantity }
           : item
       )
@@ -109,19 +97,27 @@ export function CartProvider({ children }) {
     setCart([])
   }
 
-  // חשב סכום ביניים (כולל חריטה!)
+  // חשב סכום ביניים
   const getSubtotal = () => {
     return cart.reduce((total, item) => {
-      const basePrice = parseFloat(item.price) || 0
-      const engravingPrice = parseFloat(item.engravingPrice) || 0
-      const itemTotal = (basePrice + engravingPrice) * item.quantity
-      return total + itemTotal
+      const basePrice = parseFloat(item.displayPrice || item.sale_price || item.price) || 0
+      const extra = parseFloat(item.extraPrice) || 0
+      return total + (basePrice + extra) * item.quantity
     }, 0)
   }
 
-  // חשב משלוח
+  // חשב משלוח (ניתן לעקוף מ-localStorage)
   const getShipping = () => {
     const subtotal = getSubtotal()
+    try {
+      const saved = localStorage.getItem('heichal_shipping_settings')
+      if (saved) {
+        const settings = JSON.parse(saved)
+        const freeAbove = parseFloat(settings.standard?.free_above) || 400
+        const price = parseFloat(settings.standard?.price) || 35
+        return subtotal >= freeAbove ? 0 : price
+      }
+    } catch {}
     return subtotal >= 400 ? 0 : 35
   }
 
