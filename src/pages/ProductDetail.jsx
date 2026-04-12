@@ -80,6 +80,8 @@ export default function ProductDetail() {
   const [openAccordion, setOpenAccordion] = useState(null)
   const [viewersCount] = useState(Math.floor(Math.random() * 12) + 5)
   const [customizationData, setCustomizationData] = useState({})
+  const [selectedOptions, setSelectedOptions] = useState({})
+  const [complementaryProducts, setComplementaryProducts] = useState([])
 
   useEffect(() => {
     async function fetchProduct() {
@@ -89,7 +91,7 @@ export default function ProductDetail() {
           .from('products')
           .select(`
             *,
-            categories(name, id),
+            categories!products_category_id_fkey(name, id),
             product_images(image_url, is_primary, display_order),
             product_colors(id, color_name, color_code, display_order)
           `)
@@ -97,7 +99,18 @@ export default function ProductDetail() {
           .single()
         if (error || !data) { setError('מוצר לא נמצא'); return }
         setProduct(data)
+        // טעינת מוצרים משלימים — בנפרד כדי שלא ישפיע על הצגת המוצר
+        if (data.complementary_ids?.length > 0) {
+          try {
+            const { data: compData } = await supabase
+              .from('products')
+              .select('id, name, price, sale_price, on_sale, product_images(image_url, is_primary)')
+              .in('id', data.complementary_ids)
+            if (compData) setComplementaryProducts(compData)
+          } catch {}
+        }
       } catch (err) {
+        console.error('ProductDetail error:', err)
         setError('שגיאה בטעינה')
       } finally {
         setLoading(false)
@@ -106,10 +119,24 @@ export default function ProductDetail() {
     if (id) fetchProduct()
   }, [id])
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white text-black">טוען...</div>
+  if (loading) return (
+    <div className="min-h-screen bg-white" dir="rtl">
+      <Header />
+      <div className="flex items-center justify-center pt-48">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#D4AF37]"></div>
+      </div>
+    </div>
+  )
+
   if (error || !product) return (
-    <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans">
-      <button onClick={() => navigate('/')} className="underline">חזרה לבית</button>
+    <div className="min-h-screen bg-white" dir="rtl">
+      <Header />
+      <div className="flex flex-col items-center justify-center pt-40 gap-4">
+        <p className="text-gray-500 text-lg">המוצר לא נמצא</p>
+        <button onClick={() => navigate('/')} className="px-6 py-3 bg-black text-white hover:bg-gray-800 transition-colors">
+          חזרה לעמוד הבית
+        </button>
+      </div>
     </div>
   )
 
@@ -121,28 +148,60 @@ export default function ProductDetail() {
   const engravingTypes = Array.isArray(product.engraving_type) ? product.engraving_type : product.engraving_type ? [product.engraving_type] : []
   const hasCustomization = product.allows_engraving && engravingTypes.length > 0
 
+  // קרא הגדרות מיתוג מה-admin (localStorage)
+  const getEngravingConfig = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('heichal_branding_settings') || '{}')
+      const config = JSON.parse(JSON.stringify(ENGRAVING_CONFIG))
+      Object.entries(saved).forEach(([type, s]) => {
+        if (config[type]) {
+          if (s.price !== undefined) { config[type].price = s.price; config[type].priceLabel = `₪${s.price}` }
+          if (s.text_limit !== undefined) config[type].text_limit = s.text_limit
+        }
+      })
+      return config
+    } catch { return ENGRAVING_CONFIG }
+  }
+  const engravingConfig = getEngravingConfig()
+
   const calculateExtraPrice = () => {
     let extra = 0
+    // מחיר התאמה אישית
     engravingTypes.forEach(type => {
-      const config = ENGRAVING_CONFIG[type]
+      const config = engravingConfig[type]
       const data = customizationData[type] || {}
       if (config?.fields.includes('checkbox') ? data.checked : data.text?.trim()) {
         extra += config.price
       }
+    })
+    // מחיר ווריאנטים
+    Object.values(selectedOptions).forEach(val => {
+      if (val?.price_delta) extra += parseFloat(val.price_delta) || 0
     })
     return extra
   }
 
   const displayPrice = product.on_sale && product.sale_price ? parseFloat(product.sale_price) : parseFloat(product.price)
   const totalPrice = displayPrice + calculateExtraPrice()
+  const sizesOption = product.product_options?.find(o => o.type === 'sizes')
+  const productOptions = sizesOption ? [sizesOption] : (product.product_options || [])
 
   const handleAddToCart = () => {
+    // בדוק שנבחר גודל אם יש אפשרויות חובה
+    const missingRequired = productOptions.filter(opt => opt.required && !selectedOptions[opt.name])
+    if (missingRequired.length > 0) {
+      alert(`יש לבחור ${missingRequired.map(o => o.name).join(', ')} לפני ההוספה לסל`)
+      return
+  }
     const customizations = {}
     engravingTypes.forEach(type => {
       const data = customizationData[type] || {}
       if (data.text?.trim() || data.checked) customizations[type] = data
     })
-    addToCart(product, quantity, customizations)
+    if (Object.keys(selectedOptions).length > 0) {
+      customizations._options = selectedOptions
+    }
+    addToCart(product, quantity, customizations, calculateExtraPrice())
   }
 
   const updateCustomization = (type, field, value) => {
@@ -194,15 +253,52 @@ export default function ProductDetail() {
             </div>
 
             <div className="mb-5">
-              <span className="text-sm font-medium text-green-700 flex items-center gap-1 justify-start">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
-                במלאי
-              </span>
+              {product.stock_quantity === 0 ? (
+                <span className="text-sm font-bold text-red-600 flex items-center gap-1 justify-start">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/></svg>
+                  מלאי אזל
+                </span>
+              ) : (
+                <span className="text-sm font-medium text-green-700 flex items-center gap-1 justify-start">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                  במלאי
+                </span>
+              )}
             </div>
+
+            {/* אפשרויות מוצר (ווריאנטים) */}
+            {productOptions.length > 0 && (
+              <div className="mb-5 space-y-4">
+                {productOptions.map((option, idx) => (
+                  <div key={idx}>
+                    <label className="block text-sm font-medium mb-2">
+                      {option.name} {option.required && <span className="text-red-500">*</span>}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {(option.values || []).map((val, vIdx) => (
+                        <button
+                          key={vIdx}
+                          type="button"
+                          onClick={() => setSelectedOptions(prev => ({ ...prev, [option.name]: val }))}
+                          className={`px-4 py-2 border-2 text-sm transition-all ${
+                            selectedOptions[option.name]?.label === val.label
+                              ? 'border-black bg-black text-white'
+                              : 'border-gray-300 hover:border-gray-500'
+                          }`}
+                        >
+                          {val.label}
+                          {val.price_delta > 0 && <span className="mr-1 text-xs opacity-70">(+₪{val.price_delta})</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* התאמה אישית */}
             {hasCustomization && engravingTypes.map(type => {
-              const config = ENGRAVING_CONFIG[type]
+              const config = engravingConfig[type]
               const data = customizationData[type] || {}
               return (
                 <div key={type} className="border border-gray-200 rounded-lg mb-4 overflow-hidden shadow-sm">
@@ -240,14 +336,24 @@ export default function ProductDetail() {
 
             {/* רכישה */}
             <div className="flex items-center gap-3 mb-5">
-              <button onClick={handleAddToCart} className="flex-1 bg-black text-white py-4 text-base font-medium hover:bg-gray-800 transition-all uppercase">
-                הוסף לסל
+              <button
+                onClick={handleAddToCart}
+                disabled={product.stock_quantity === 0}
+                className={`flex-1 py-4 text-base font-medium transition-all uppercase ${
+                  product.stock_quantity === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-black text-white hover:bg-gray-800'
+                }`}
+              >
+                {product.stock_quantity === 0 ? 'מלאי אזל' : 'הוסף לסל'}
               </button>
-              <div className="flex items-center border-2 border-gray-200 rounded-sm">
-                <button onClick={() => setQuantity(q => q > 1 ? q - 1 : 1)} className="w-12 h-[52px] text-xl">−</button>
-                <span className="w-12 h-[52px] flex items-center justify-center font-medium">{quantity}</span>
-                <button onClick={() => setQuantity(q => q + 1)} className="w-12 h-[52px] text-xl">+</button>
-              </div>
+              {product.stock_quantity !== 0 && (
+                <div className="flex items-center border-2 border-gray-200 rounded-sm">
+                  <button onClick={() => setQuantity(q => q > 1 ? q - 1 : 1)} className="w-12 h-[52px] text-xl">−</button>
+                  <span className="w-12 h-[52px] flex items-center justify-center font-medium">{quantity}</span>
+                  <button onClick={() => setQuantity(q => q + 1)} className="w-12 h-[52px] text-xl">+</button>
+                </div>
+              )}
             </div>
 
             {/* צופים עכשיו */}
@@ -273,6 +379,36 @@ export default function ProductDetail() {
             </div>
           </div>
         </div>
+
+        {/* מוצרים משלימים */}
+        {complementaryProducts.length > 0 && (
+          <div className="mt-16 border-t border-gray-200 pt-12">
+            <h2 className="text-2xl font-serif mb-6 text-right" style={{ color: '#C9A84C' }}>מוצרים משלימים</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {complementaryProducts.map(cp => {
+                const cpImage = cp.product_images?.find(i => i.is_primary)?.image_url || cp.product_images?.[0]?.image_url
+                const cpPrice = cp.on_sale && cp.sale_price ? parseFloat(cp.sale_price) : parseFloat(cp.price)
+                return (
+                  <Link key={cp.id} to={`/product/${cp.id}`} className="group border border-gray-100 hover:shadow-md transition-shadow">
+                    <div className="aspect-square overflow-hidden bg-gray-50">
+                      {cpImage
+                        ? <img src={cpImage} alt={cp.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        : <div className="w-full h-full flex items-center justify-center text-gray-300 text-4xl">📦</div>
+                      }
+                    </div>
+                    <div className="p-3 text-center">
+                      <div className="text-sm font-medium text-gray-800 line-clamp-1 mb-1">{cp.name}</div>
+                      <div className="text-sm font-bold text-[#D4AF37]">₪{cpPrice.toLocaleString('he-IL')}</div>
+                      <div className="mt-2 text-xs text-gray-500 border border-gray-300 py-1 group-hover:bg-black group-hover:text-white group-hover:border-black transition-colors">
+                        הוסף לסל
+                      </div>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

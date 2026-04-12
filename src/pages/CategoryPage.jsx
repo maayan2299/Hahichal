@@ -80,15 +80,25 @@ export default function CategoryPage() {
                     product.product_images?.find(i => i.is_primary)?.image_url ||
                     product.product_images?.[0]?.image_url ||
                     ''
+                  const isOutOfStock = product.stock_quantity === 0
 
                   return (
                     <div key={product.id} className="group relative">
                       {/* כפתור הוספה לסל */}
                       <button
-                        className="absolute top-3 left-3 w-10 h-10 bg-white shadow-xl rounded-full flex items-center justify-center z-20 border border-[#D4AF37]/30 hover:bg-[#D4AF37] hover:text-white transition-all duration-300 transform hover:scale-110"
+                        className={`absolute top-3 left-3 w-10 h-10 bg-white shadow-xl rounded-full flex items-center justify-center z-20 border border-[#D4AF37]/30 transition-all duration-300 transform hover:scale-110 ${
+                          isOutOfStock
+                            ? 'opacity-30 cursor-not-allowed'
+                            : 'hover:bg-[#D4AF37] hover:text-white'
+                        }`}
                         onClick={(e) => {
                           e.preventDefault()
-                          addToCart(product, 1)
+                          if (isOutOfStock) return
+                          if (product.product_options?.length > 0) {
+                            window.location.href = `/product/${product.id}`
+                          } else {
+                            addToCart(product, 1)
+                          }
                         }}
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,11 +108,19 @@ export default function CategoryPage() {
 
                       <Link to={`/product/${product.id}`} className="block">
                         <div className="aspect-[4/5] bg-gray-50 rounded-sm overflow-hidden mb-4 relative border border-transparent group-hover:border-[#D4AF37]/20 transition-all">
+                          
+                          {/* שכבת מלאי אזל */}
+                          {isOutOfStock && (
+                            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center">
+                              <span className="bg-white text-black text-xs font-bold px-3 py-1 border border-gray-300 tracking-widest">מלאי אזל</span>
+                            </div>
+                          )}
+
                           {imgUrl ? (
                             <img
                               src={imgUrl}
                               alt={product.name}
-                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                              className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${isOutOfStock ? 'opacity-50' : ''}`}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-200">
@@ -113,7 +131,7 @@ export default function CategoryPage() {
                           )}
 
                           {/* תג SALE */}
-                          {product.sale_price && (
+                          {product.sale_price && !isOutOfStock && (
                             <div className="absolute top-3 right-3">
                               <span className="bg-[#D4AF37] text-white text-xs font-bold px-2 py-1">SALE</span>
                             </div>
@@ -130,7 +148,9 @@ export default function CategoryPage() {
                           >
                             {product.name}
                           </h3>
-                          {product.sale_price ? (
+                          {isOutOfStock ? (
+                            <p className="text-sm text-gray-400 font-medium">אזל מהמלאי</p>
+                          ) : product.sale_price ? (
                             <div className="flex items-center justify-center gap-2">
                               <p className="text-lg font-bold text-[#D4AF37]">
                                 ₪{parseFloat(product.sale_price).toLocaleString('he-IL')}

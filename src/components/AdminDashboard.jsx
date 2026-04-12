@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { Plus, Trash2, X, LogOut, Eye, EyeOff, Search, Star, Settings, Image, Package, Tag, Award, Grid, MessageSquare, Percent, Bell, AlertTriangle, Edit, Upload } from 'lucide-react';
-
-const supabaseUrl = 'https://taewbxptprdixsusvjfh.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhZXdieHB0cHJkaXhzdXN2amZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNDk0MjIsImV4cCI6MjA4NjgyNTQyMn0.TVgjzOt3UQW8FQVFk0Ze5Se2qOwS-WpqTSDHJlkIrFc';
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { Plus, Trash2, X, LogOut, Eye, EyeOff, Search, Star, Settings, Image, Package, Tag, Award, Grid, MessageSquare, Percent, Bell, AlertTriangle, Edit, Upload, Truck, ShoppingBag } from 'lucide-react';
+import { supabase, supabaseUrl } from '../lib/supabase';
 
 const ADMIN_USERNAME = 'heichal';
 const ADMIN_PASSWORD = 'heichal2026';
@@ -98,7 +94,8 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [coupons, setCoupons] = useState([]);
+  const [coupons, setCoupons] = useState([])
+  const [orders, setOrders] = useState([]);
   const [popup, setPopup] = useState({ is_active: false, title: '', message: '', button_text: 'סגור', image_url: null });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('');
@@ -133,8 +130,31 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     name: '', price: '', description: '', category_id: '',
     stock_quantity: 0, allows_engraving: false, engraving_types: [],
     is_featured: false, on_sale: false, sale_type: 'percentage',
-    sale_percentage: '', sale_price: '', dimensions: '', material: ''
+    sale_percentage: '', sale_price: '', dimensions: '', material: '',
+    complementary_ids: [], product_options: [],
+    has_sizes: false, sizes: [], has_colors: false, inline_colors: []
   });
+
+  // הגדרות משלוח
+  const DEFAULT_SHIPPING = {
+    standard: { name: 'משלוח רגיל', description: '5-7 ימי עסקים', price: 35, free_above: 400, enabled: true },
+    express: { name: 'משלוח מהיר', description: '1-2 ימי עסקים', price: 60, enabled: true },
+    pickup: { name: 'איסוף עצמי מבת-ים', description: 'ללא עלות', price: 0, enabled: true }
+  };
+  const DEFAULT_BRANDING = {
+    engraving: { price: 10, text_limit: 30 },
+    embroidery: { price: 40, text_limit: 50 },
+    embossing: { price: 15, text_limit: 30 },
+    printing: { price: 8, text_limit: 100 }
+  };
+  const [shippingSettings, setShippingSettings] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('heichal_shipping_settings')) || DEFAULT_SHIPPING; } catch { return DEFAULT_SHIPPING; }
+  });
+  const [brandingSettings, setBrandingSettings] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('heichal_branding_settings')) || DEFAULT_BRANDING; } catch { return DEFAULT_BRANDING; }
+  });
+  const [whatsappNumber, setWhatsappNumber] = useState(() => localStorage.getItem('heichal_whatsapp') || '972501234567');
+  const [instagramName, setInstagramName] = useState(() => localStorage.getItem('heichal_instagram') || '');
 
   const [productImages, setProductImages] = useState([]);
   const [productColors, setProductColors] = useState([]);
@@ -149,26 +169,27 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
 
   const loadAll = async () => {
     setLoading(true);
-    try {
-      const [pRes, cRes, rRes, cpRes, ppRes] = await Promise.all([
-        supabase.from('products').select(`*, categories(name), product_images(image_url, is_primary), product_colors(id)`).order('created_at', { ascending: false }),
-        supabase.from('categories').select('*').order('display_order'),
-        supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
-        supabase.from('coupons').select('*').order('created_at', { ascending: false }),
-        supabase.from('popup_settings').select('*').limit(1).single()
-      ]);
-      if (pRes.data) setProducts(pRes.data.map(p => ({
-        ...p,
-        category_name: p.categories?.name || '',
-        primary_image: p.product_images?.find(i => i.is_primary)?.image_url || p.product_images?.[0]?.image_url,
-        images_count: p.product_images?.length || 0,
-        colors_count: p.product_colors?.length || 0
-      })));
-      if (cRes.data) setCategories(cRes.data);
-      if (rRes.data) setReviews(rRes.data);
-      if (cpRes.data) setCoupons(cpRes.data);
-      if (ppRes.data) setPopup(ppRes.data);
-    } catch (e) { console.error(e); }
+    // כל שאילתה עצמאית — אם אחת נכשלת, האחרות ממשיכות
+    const [pRes, cRes, rRes, cpRes, ppRes, oRes] = await Promise.all([
+      supabase.from('products').select(`*, categories!products_category_id_fkey(name), product_images(image_url, is_primary), product_colors(id)`).order('created_at', { ascending: false }),
+      supabase.from('categories').select('*').order('display_order'),
+      supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
+      supabase.from('coupons').select('*').order('created_at', { ascending: false }),
+      supabase.from('popup_settings').select('*').limit(1).maybeSingle(),
+      supabase.from('orders').select('*').order('created_at', { ascending: false })
+    ]);
+    if (pRes.data) setProducts(pRes.data.map(p => ({
+      ...p,
+      category_name: p.categories?.name || '',
+      primary_image: p.product_images?.find(i => i.is_primary)?.image_url || p.product_images?.[0]?.image_url,
+      images_count: p.product_images?.length || 0,
+      colors_count: p.product_colors?.length || 0
+    })));
+    if (cRes.data) setCategories(cRes.data);
+    if (rRes.data) setReviews(rRes.data);
+    if (cpRes.data) setCoupons(cpRes.data);
+    // ppRes.data יכול להיות null אם הטבלה ריקה — זה בסדר, נשמור ברירת מחדל
+    if (oRes?.data) setOrders(oRes.data);
     setLoading(false);
   };
 
@@ -194,6 +215,10 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       else if (productForm.sale_type === 'fixed' && productForm.sale_price)
         salePrice = parseFloat(productForm.sale_price);
     }
+    // שמור גדלים כ-product_options
+    const sizesOption = productForm.has_sizes && productForm.sizes?.filter(s => s.label).length > 0
+      ? [{ type: 'sizes', name: 'גודל', required: true, values: productForm.sizes.filter(s => s.label) }]
+      : null;
     const data = {
       name: productForm.name, price: parseFloat(productForm.price),
       description: productForm.description, category_id: productForm.category_id || null,
@@ -207,18 +232,31 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       sale_percentage: productForm.on_sale && productForm.sale_type === 'percentage' ? parseInt(productForm.sale_percentage) : null,
       sale_price: salePrice,
       dimensions: productForm.dimensions || null,
-      material: productForm.material || null
+      material: productForm.material || null,
+      complementary_ids: productForm.complementary_ids?.length > 0 ? productForm.complementary_ids : null,
+      product_options: sizesOption
     };
     try {
+      let productId;
       if (editingProduct) {
         await supabase.from('products').update(data).eq('id', editingProduct.id);
+        productId = editingProduct.id;
       } else {
         const { data: np, error } = await supabase.from('products').insert([{ ...data, is_active: true }]).select().single();
         if (error) throw error;
+        productId = np.id;
         if (newImageFile) {
           const url = await upload(newImageFile);
           if (url) await supabase.from('product_images').insert([{ product_id: np.id, image_url: url, is_primary: true, display_order: 0 }]);
         }
+      }
+      // שמור צבעים inline אם הוגדרו
+      if (productForm.has_colors && productForm.inline_colors?.filter(c => c.name).length > 0) {
+        if (editingProduct) await supabase.from('product_colors').delete().eq('product_id', productId);
+        const colorsToInsert = productForm.inline_colors.filter(c => c.name).map((c, i) => ({
+          product_id: productId, color_name: c.name, color_code: c.code || '#000000', display_order: i
+        }));
+        await supabase.from('product_colors').insert(colorsToInsert);
       }
       await loadAll();
       closeProductModal();
@@ -249,12 +287,18 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       engraving_types: Array.isArray(product.engraving_type) ? product.engraving_type : (product.engraving_type ? [product.engraving_type] : []),
       is_featured: product.is_featured || false, on_sale: product.on_sale || false,
       sale_type: product.sale_type || 'percentage', sale_percentage: product.sale_percentage || '',
-      sale_price: product.sale_price || '', dimensions: product.dimensions || '', material: product.material || ''
+      sale_price: product.sale_price || '', dimensions: product.dimensions || '', material: product.material || '',
+      complementary_ids: product.complementary_ids || [], product_options: product.product_options || [],
+      has_sizes: !!(product.product_options?.find(o => o.type === 'sizes')?.values?.length),
+      sizes: product.product_options?.find(o => o.type === 'sizes')?.values || [],
+      has_colors: false, inline_colors: []
     } : {
       name: '', price: '', description: '', category_id: prefillCat,
       stock_quantity: 0, allows_engraving: false, engraving_types: [],
       is_featured: false, on_sale: false, sale_type: 'percentage',
-      sale_percentage: '', sale_price: '', dimensions: '', material: ''
+      sale_percentage: '', sale_price: '', dimensions: '', material: '',
+      complementary_ids: [], product_options: [],
+      has_sizes: false, sizes: [], has_colors: false, inline_colors: []
     });
     setNewImageFile(null);
     setShowProductModal(true);
@@ -375,18 +419,96 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       if (popupImageFile) {
         imageUrl = await upload(popupImageFile, 'popup', 'popup-image.png');
       }
-      await supabase.from('popup_settings').update({
+      const popupData = {
         is_active: popup.is_active,
         title: popup.title,
         message: popup.message,
         button_text: popup.button_text,
         image_url: imageUrl
-      }).eq('id', popup.id);
+      };
+      if (popup.id) {
+        await supabase.from('popup_settings').update(popupData).eq('id', popup.id);
+      } else {
+        // אין שורה בטבלה — צור אחת
+        const { data: newPopup } = await supabase.from('popup_settings').insert([popupData]).select().single();
+        if (newPopup) setPopup(prev => ({ ...prev, id: newPopup.id }));
+      }
       setPopup(prev => ({ ...prev, image_url: imageUrl }));
       alert('הפופ-אפ עודכן!');
     } catch (e) {
       alert('שגיאה בשמירה');
     }
+  };
+
+  // ── SETTINGS ──
+  const saveStoreSettings = () => {
+    localStorage.setItem('heichal_shipping_settings', JSON.stringify(shippingSettings));
+    localStorage.setItem('heichal_branding_settings', JSON.stringify(brandingSettings));
+    localStorage.setItem('heichal_whatsapp', whatsappNumber);
+    localStorage.setItem('heichal_instagram', instagramName);
+    alert('ההגדרות נשמרו!');
+  };
+
+  const updateShipping = (method, field, value) => {
+    setShippingSettings(prev => ({ ...prev, [method]: { ...prev[method], [field]: value } }));
+  };
+  const updateBranding = (type, field, value) => {
+    setBrandingSettings(prev => ({ ...prev, [type]: { ...prev[type], [field]: value } }));
+  };
+
+  // אפשרויות מוצר (ווריאנטים)
+  const addProductOption = () => {
+    setProductForm(prev => ({
+      ...prev,
+      product_options: [...(prev.product_options || []), { name: '', required: false, values: [] }]
+    }));
+  };
+  const updateProductOption = (idx, field, value) => {
+    setProductForm(prev => {
+      const opts = [...(prev.product_options || [])];
+      opts[idx] = { ...opts[idx], [field]: value };
+      return { ...prev, product_options: opts };
+    });
+  };
+  const removeProductOption = (idx) => {
+    setProductForm(prev => ({
+      ...prev,
+      product_options: prev.product_options.filter((_, i) => i !== idx)
+    }));
+  };
+  const addOptionValue = (optIdx) => {
+    setProductForm(prev => {
+      const opts = [...(prev.product_options || [])];
+      opts[optIdx] = { ...opts[optIdx], values: [...(opts[optIdx].values || []), { label: '', price_delta: 0 }] };
+      return { ...prev, product_options: opts };
+    });
+  };
+  const updateOptionValue = (optIdx, valIdx, field, value) => {
+    setProductForm(prev => {
+      const opts = [...(prev.product_options || [])];
+      const vals = [...(opts[optIdx].values || [])];
+      vals[valIdx] = { ...vals[valIdx], [field]: field === 'price_delta' ? parseFloat(value) || 0 : value };
+      opts[optIdx] = { ...opts[optIdx], values: vals };
+      return { ...prev, product_options: opts };
+    });
+  };
+  const removeOptionValue = (optIdx, valIdx) => {
+    setProductForm(prev => {
+      const opts = [...(prev.product_options || [])];
+      opts[optIdx] = { ...opts[optIdx], values: opts[optIdx].values.filter((_, i) => i !== valIdx) };
+      return { ...prev, product_options: opts };
+    });
+  };
+  const toggleComplementary = (productId) => {
+    setProductForm(prev => {
+      const ids = prev.complementary_ids || [];
+      return {
+        ...prev,
+        complementary_ids: ids.includes(productId)
+          ? ids.filter(id => id !== productId)
+          : [...ids, productId]
+      };
+    });
   };
 
   // ── BANNER & LOGO ──
@@ -414,6 +536,21 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     }
   };
 
+  const updateOrderStatus = async (orderId, status) => {
+    await supabase.from('orders').update({ status }).eq('id', orderId);
+    const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+    if (data) setOrders(data);
+  };
+
+  const exportMarketingEmails = () => {
+    const consented = orders.filter(o => o.marketing_consent);
+    if (consented.length === 0) { alert('אין לקוחות שהסכימו לדיוור'); return; }
+    const csv = 'שם,אימייל,טלפון\n' + consented.map(o => `${o.customer_name},${o.customer_email},${o.customer_phone || ''}`).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'רשימת_דיוור.csv'; a.click();
+  };
+
   const filtered = products.filter(p => {
     const s = p.name.toLowerCase().includes(searchTerm.toLowerCase());
     const c = !filterCat || p.category_id?.toString() === filterCat;
@@ -434,7 +571,8 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     { id: 'coupons', label: 'קופונים', icon: <Percent size={15}/> },
     { id: 'popup', label: 'פופ-אפ', icon: <Bell size={15}/> },
     { id: 'banner', label: 'באנר/לוגו', icon: <Image size={15}/> },
-    { id: 'settings', label: 'הגדרות', icon: <Settings size={15}/> },
+    { id: 'shipping', label: 'משלוחים', icon: <Truck size={15}/> },
+    { id: 'orders', label: 'הזמנות', icon: <ShoppingBag size={15}/> },
   ];
 
   if (loading) return (
@@ -512,6 +650,70 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       {/* ── CONTENT ── */}
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px 16px' }}>
 
+
+       {/* ORDERS */}
+      {tab === 'orders' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <div style={{ fontSize: '17px', fontWeight: '700', color: BK }}>הזמנות</div>
+              <div style={{ fontSize: '12px', color: '#aaa', marginTop: '2px' }}>{orders.length} הזמנות סה"כ</div>
+            </div>
+            <button onClick={exportMarketingEmails} style={btn(G, BK, { fontSize: '13px' })}>📧 ייצא רשימת דיוור</button>
+          </div>
+          {orders.length === 0 ? (
+            <div style={{ ...card, padding: '60px', textAlign: 'center', color: '#bbb' }}>
+              <ShoppingBag size={40} color="#ddd" style={{ marginBottom: '10px' }}/>
+              <p>אין הזמנות עדיין</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '10px' }}>
+              {orders.map(o => (
+                <div key={o.id} style={{ ...card, padding: '16px 20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: '700', color: BK }}>{o.order_number}</span>
+                        {o.marketing_consent && <span style={{ fontSize: '10px', background: '#ecfdf5', color: '#16a34a', padding: '2px 8px', borderRadius: '20px', fontWeight: '600' }}>📧 מסכים לדיוור</span>}
+                      </div>
+                      <div style={{ fontSize: '13px', color: BK, fontWeight: '600' }}>{o.customer_name}</div>
+                      <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>{o.customer_email} • {o.customer_phone}</div>
+                      <div style={{ fontSize: '11px', color: '#aaa', marginTop: '4px' }}>
+                        {new Date(o.created_at).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                <div style={{ fontSize: '18px', fontWeight: '700', color: BK }}>₪{parseFloat(o.total || 0).toLocaleString('he-IL')}</div>
+                <select value={o.status || 'pending'} onChange={e => updateOrderStatus(o.id, e.target.value)}
+                  style={{ ...inp, width: 'auto', padding: '6px 10px', fontSize: '12px', fontWeight: '600',
+                    background: o.status === 'completed' ? '#ecfdf5' : o.status === 'shipped' ? '#eff6ff' : o.status === 'processing' ? '#fef9ee' : '#f9f9f7',
+                    color: o.status === 'completed' ? '#16a34a' : o.status === 'shipped' ? '#2563eb' : o.status === 'processing' ? '#92400e' : '#666'
+                  }}>
+                  <option value="pending">⏳ ממתין</option>
+                  <option value="processing">🔧 בטיפול</option>
+                  <option value="shipped">🚚 נשלח</option>
+                  <option value="completed">✅ הושלם</option>
+                  <option value="cancelled">❌ בוטל</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${BR}` }}>
+              <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '6px', fontWeight: '600' }}>פריטים:</div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {(Array.isArray(o.items) ? o.items : []).map((item, i) => (
+                  <span key={i} style={{ fontSize: '11px', background: BG, border: `1px solid ${BR}`, padding: '3px 8px', borderRadius: '20px' }}>
+                    {item.name} ×{item.quantity}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {o.notes && <div style={{ marginTop: '8px', fontSize: '12px', color: '#666', background: BG, padding: '8px 12px', borderRadius: '6px' }}>📝 {o.notes}</div>}
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}   
         {/* OVERVIEW */}
         {tab === 'overview' && (
           <div>
@@ -545,6 +747,8 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
             </div>
           </div>
         )}
+
+
 
         {/* PRODUCTS */}
         {tab === 'products' && (
@@ -1000,11 +1204,69 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
           </div>
         )}
 
+        {/* SHIPPING */}
+        {tab === 'shipping' && (
+          <div style={{ maxWidth: '700px' }}>
+            <div style={{ ...card, padding: '28px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '17px', fontWeight: '700', color: BK, marginBottom: '6px' }}>אפשרויות משלוח</div>
+              <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '22px' }}>הגדר את שיטות המשלוח ומחיריהן</div>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {[
+                  { key: 'standard', label: 'משלוח רגיל', icon: '📦', showFree: true },
+                  { key: 'express', label: 'משלוח מהיר', icon: '🚀', showFree: false },
+                  { key: 'pickup', label: 'איסוף עצמי', icon: '🏪', showFree: false },
+                ].map(({ key, label, icon, showFree }) => (
+                  <div key={key} style={{ background: BG, borderRadius: '10px', padding: '16px', border: `1px solid ${BR}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: BK }}>{icon} {label}</div>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={shippingSettings[key]?.enabled !== false} onChange={e => updateShipping(key, 'enabled', e.target.checked)} style={{ width: 'auto', accentColor: G }} />
+                        <span style={{ fontSize: '12px', fontWeight: '600' }}>פעיל</span>
+                      </label>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: showFree ? '1fr 1fr 1fr' : '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>שם</label>
+                        <input value={shippingSettings[key]?.name || ''} onChange={e => updateShipping(key, 'name', e.target.value)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>תיאור</label>
+                        <input value={shippingSettings[key]?.description || ''} onChange={e => updateShipping(key, 'description', e.target.value)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                      </div>
+                      {showFree ? (
+                        <>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מחיר (₪)</label>
+                            <input type="number" value={shippingSettings[key]?.price ?? ''} onChange={e => updateShipping(key, 'price', parseFloat(e.target.value) || 0)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                          </div>
+                          <div style={{ gridColumn: '1 / -1' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>משלוח חינם מעל (₪)</label>
+                            <input type="number" value={shippingSettings[key]?.free_above ?? ''} onChange={e => updateShipping(key, 'free_above', parseFloat(e.target.value) || 0)} style={{ ...inp, padding: '9px 12px', fontSize: '13px', maxWidth: '200px' }} />
+                          </div>
+                        </>
+                      ) : key !== 'pickup' && (
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מחיר (₪)</label>
+                          <input type="number" value={shippingSettings[key]?.price ?? ''} onChange={e => updateShipping(key, 'price', parseFloat(e.target.value) || 0)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <button onClick={() => { localStorage.setItem('heichal_shipping_settings', JSON.stringify(shippingSettings)); alert('הגדרות משלוח נשמרו!'); }} style={{ ...btn(G, BK, { padding: '13px', justifyContent: 'center', fontSize: '14px', width: '100%' }) }}>
+                  <Truck size={15}/> שמור הגדרות משלוח
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* SETTINGS */}
         {tab === 'settings' && (
-          <div style={{ maxWidth: '560px' }}>
+          <div style={{ display: 'grid', gap: '20px', maxWidth: '700px' }}>
+            {/* פרטי חנות */}
             <div style={{ ...card, padding: '28px' }}>
-              <div style={{ fontSize: '17px', fontWeight: '700', color: BK, marginBottom: '22px' }}>הגדרות החנות</div>
+              <div style={{ fontSize: '17px', fontWeight: '700', color: BK, marginBottom: '22px' }}>פרטי החנות</div>
               <div style={{ display: 'grid', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: BK }}>שם החנות</label>
@@ -1012,21 +1274,47 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: BK }}>מספר וואטסאפ</label>
-                  <input style={inp} placeholder="972501234567" />
-                  <div style={{ fontSize: '11px', color: '#bbb', marginTop: '4px' }}>ללא + ומקפים</div>
+                  <input value={whatsappNumber} onChange={e => setWhatsappNumber(e.target.value)} style={inp} placeholder="972501234567" />
+                  <div style={{ fontSize: '11px', color: '#bbb', marginTop: '4px' }}>ללא + ומקפים — מספר זה ישמש לכפתור הוואטסאפ הצף</div>
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: BK }}>שם אינסטגרם</label>
-                  <input style={inp} placeholder="hahiechal_judaica" />
+                  <input value={instagramName} onChange={e => setInstagramName(e.target.value)} style={inp} placeholder="hahiechal_judaica" />
                 </div>
-                <div style={{ background: '#fffbf0', border: `1px solid ${G}`, borderRadius: '8px', padding: '12px', fontSize: '12px', color: '#8a6d00' }}>
-                  💡 לאחר שמירה, עדכן את הערכים גם בקוד — Header.jsx ו-Footer.jsx
-                </div>
-                <button onClick={() => alert('נשמר!')} style={{ ...btn(G, BK, { padding: '12px', justifyContent: 'center', fontSize: '14px', width: '100%' }) }}>
-                  שמור הגדרות
-                </button>
               </div>
             </div>
+
+            {/* הגדרות מיתוג */}
+            <div style={{ ...card, padding: '28px' }}>
+              <div style={{ fontSize: '17px', fontWeight: '700', color: BK, marginBottom: '6px' }}>הגדרות מיתוג והתאמה אישית</div>
+              <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '18px' }}>הגדר מחיר ומגבלת תווים לכל סוג מיתוג</div>
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {[
+                  { key: 'engraving', label: 'חריטה', icon: '✍️' },
+                  { key: 'embroidery', label: 'רקמה', icon: '🧵' },
+                  { key: 'embossing', label: 'הטבעה', icon: '🔏' },
+                  { key: 'printing', label: 'הדפסה', icon: '🖨️' },
+                ].map(({ key, label, icon }) => (
+                  <div key={key} style={{ background: BG, borderRadius: '10px', padding: '14px', border: `1px solid ${BR}` }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: BK, marginBottom: '10px' }}>{icon} {label}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מחיר (₪)</label>
+                        <input type="number" min="0" value={brandingSettings[key]?.price ?? ''} onChange={e => updateBranding(key, 'price', parseFloat(e.target.value) || 0)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מגבלת תווים</label>
+                        <input type="number" min="1" max="500" value={brandingSettings[key]?.text_limit ?? ''} onChange={e => updateBranding(key, 'text_limit', parseInt(e.target.value) || 30)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={saveStoreSettings} style={{ ...btn(G, BK, { padding: '13px', justifyContent: 'center', fontSize: '14px', width: '100%' }) }}>
+              <Settings size={15}/> שמור את כל ההגדרות
+            </button>
           </div>
         )}
       </div>
@@ -1115,7 +1403,14 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>מלאי</label>
-                    <input type="number" value={productForm.stock_quantity} onChange={e => setProductForm({...productForm, stock_quantity: e.target.value})} style={inp} />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {[{ val: 10, label: '✅ במלאי' }, { val: 0, label: '❌ אזל המלאי' }].map(opt => (
+                        <label key={opt.val} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', background: productForm.stock_quantity == opt.val ? BK : BG, border: `1.5px solid ${productForm.stock_quantity == opt.val ? BK : BR}`, borderRadius: '8px', cursor: 'pointer' }}>
+                          <input type="radio" name="stock" checked={productForm.stock_quantity == opt.val} onChange={() => setProductForm({...productForm, stock_quantity: opt.val})} style={{ width: 'auto', accentColor: G }} />
+                          <span style={{ fontSize: '13px', fontWeight: '600', color: productForm.stock_quantity == opt.val ? WH : BK }}>{opt.label}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -1202,6 +1497,115 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                         </div>
                       )}
                     </div>
+                  )}
+                </div>
+
+                {/* גדלים */}
+                <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', marginBottom: productForm.has_sizes ? '12px' : '0' }}>
+                    <input type="checkbox" checked={productForm.has_sizes || false} onChange={e => setProductForm({...productForm, has_sizes: e.target.checked, sizes: e.target.checked ? (productForm.sizes?.length > 0 ? productForm.sizes : [{ label: '', price_delta: 0 }]) : []})} style={{ width: 'auto', accentColor: G }} />
+                    <span style={{ fontSize: '13px', fontWeight: '600' }}>📐 יש גדלים / מידות</span>
+                  </label>
+                  {productForm.has_sizes && (
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px' }}>הוסף כל גודל בשדה נפרד. ניתן להוסיף הפרש מחיר לכל גודל (אופציונלי)</div>
+                      <div style={{ display: 'grid', gap: '6px', marginBottom: '8px' }}>
+                        {(productForm.sizes || []).map((s, idx) => (
+                          <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <input value={s.label} onChange={e => {
+                              const sizes = [...productForm.sizes];
+                              sizes[idx] = { ...sizes[idx], label: e.target.value };
+                              setProductForm({...productForm, sizes});
+                            }} placeholder={`גודל ${idx + 1}, למשל: S / קטן / 10 ס"מ`} style={{ ...inp, flex: 2, padding: '8px 10px', fontSize: '13px' }} />
+                            <input type="number" value={s.price_delta || ''} onChange={e => {
+                              const sizes = [...productForm.sizes];
+                              sizes[idx] = { ...sizes[idx], price_delta: parseFloat(e.target.value) || 0 };
+                              setProductForm({...productForm, sizes});
+                            }} placeholder="+ ₪" style={{ ...inp, width: '80px', padding: '8px 10px', fontSize: '13px' }} />
+                            <button type="button" onClick={() => {
+                              const sizes = productForm.sizes.filter((_, i) => i !== idx);
+                              setProductForm({...productForm, sizes, has_sizes: sizes.length > 0});
+                            }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb' }}><X size={14}/></button>
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => setProductForm({...productForm, sizes: [...(productForm.sizes || []), { label: '', price_delta: 0 }]})}
+                        style={{ ...btn(BK, WH, { padding: '6px 12px', fontSize: '12px' }) }}><Plus size={11}/> הוסף גודל</button>
+                      {(productForm.sizes || []).filter(s => s.label).length > 0 && (
+                        <div style={{ marginTop: '8px', display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                          {productForm.sizes.filter(s => s.label).map((s, i) => (
+                            <span key={i} style={{ background: BK, color: WH, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' }}>
+                              {s.label}{s.price_delta > 0 ? ` +₪${s.price_delta}` : ''}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* צבעים */}
+                <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', marginBottom: productForm.has_colors ? '12px' : '0' }}>
+                    <input type="checkbox" checked={productForm.has_colors || false} onChange={e => setProductForm({...productForm, has_colors: e.target.checked})} style={{ width: 'auto', accentColor: G }} />
+                    <span style={{ fontSize: '13px', fontWeight: '600' }}>🎨 יש צבעים</span>
+                  </label>
+                  {productForm.has_colors && (
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px' }}>הוסף צבעים — שם + בחר צבע מהפלטה</div>
+                      <div style={{ display: 'grid', gap: '6px', marginBottom: '8px' }}>
+                        {(productForm.inline_colors || []).map((c, idx) => (
+                          <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <input value={c.name} onChange={e => {
+                              const colors = [...productForm.inline_colors];
+                              colors[idx] = { ...colors[idx], name: e.target.value };
+                              setProductForm({...productForm, inline_colors: colors});
+                            }} placeholder="שם הצבע, למשל: זהב" style={{ ...inp, flex: 1, padding: '8px 10px', fontSize: '13px' }} />
+                            <input type="color" value={c.code || '#C9A84C'} onChange={e => {
+                              const colors = [...productForm.inline_colors];
+                              colors[idx] = { ...colors[idx], code: e.target.value };
+                              setProductForm({...productForm, inline_colors: colors});
+                            }} style={{ width: '44px', height: '40px', border: `1.5px solid ${BR}`, borderRadius: '8px', cursor: 'pointer', padding: '2px' }} />
+                            <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: c.code || '#C9A84C', border: `1px solid ${BR}` }}></div>
+                            <button type="button" onClick={() => {
+                              const colors = productForm.inline_colors.filter((_, i) => i !== idx);
+                              setProductForm({...productForm, inline_colors: colors, has_colors: colors.length > 0});
+                            }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb' }}><X size={14}/></button>
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => setProductForm({...productForm, inline_colors: [...(productForm.inline_colors || []), { name: '', code: '#C9A84C' }]})}
+                        style={{ ...btn(BK, WH, { padding: '6px 12px', fontSize: '12px' }) }}><Plus size={11}/> הוסף צבע</button>
+                      {(productForm.inline_colors || []).filter(c => c.name).length > 0 && (
+                        <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {productForm.inline_colors.filter(c => c.name).map((c, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: WH, border: `1px solid ${BR}`, borderRadius: '20px', padding: '3px 10px 3px 6px' }}>
+                              <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: c.code }}></div>
+                              <span style={{ fontSize: '11px', fontWeight: '600' }}>{c.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* מוצרים משלימים */}
+                <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: BK, marginBottom: '10px' }}>🔗 מוצרים משלימים (המלצה)</div>
+                  <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px' }}>בחר מוצרים שיוצגו כהמלצה בדף המוצר הנוכחי</div>
+                  <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'grid', gap: '4px' }}>
+                    {products.filter(p => !editingProduct || p.id !== editingProduct.id).map(p => (
+                      <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', background: (productForm.complementary_ids || []).includes(p.id) ? BK : WH, borderRadius: '6px', cursor: 'pointer', border: `1px solid ${(productForm.complementary_ids || []).includes(p.id) ? BK : BR}` }}>
+                        <input type="checkbox" checked={(productForm.complementary_ids || []).includes(p.id)} onChange={() => toggleComplementary(p.id)} style={{ width: 'auto', accentColor: G }} />
+                        {p.primary_image && <img src={p.primary_image} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px' }} />}
+                        <span style={{ fontSize: '12px', fontWeight: '500', color: (productForm.complementary_ids || []).includes(p.id) ? WH : BK }}>{p.name}</span>
+                        <span style={{ fontSize: '11px', color: '#aaa', marginRight: 'auto' }}>₪{p.price}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {(productForm.complementary_ids || []).length > 0 && (
+                    <div style={{ fontSize: '11px', color: G, marginTop: '6px', fontWeight: '600' }}>✓ {(productForm.complementary_ids || []).length} מוצרים נבחרו</div>
                   )}
                 </div>
 

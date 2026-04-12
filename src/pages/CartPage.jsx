@@ -54,11 +54,20 @@ export default function CartPage() {
           <div className="lg:col-span-2">
             <div className="bg-white border border-gray-200 divide-y divide-gray-200">
               {cart.map((item) => {
-                const itemImage = item.main_image_url ? getImageUrl(item.main_image_url) : null
-                const itemTotal = (parseFloat(item.price) || 0) * item.quantity
+                // חיפוש תמונה ממספר מקורות אפשריים
+                const rawImage = item.main_image_url
+                  || item.product_images?.find(i => i.is_primary)?.image_url
+                  || item.product_images?.[0]?.image_url
+                  || item.images?.[0]
+                  || null
+                const itemImage = rawImage ? getImageUrl(rawImage) : null
+                const basePrice = parseFloat(item.displayPrice || item.sale_price || item.price) || 0
+                const extraPrice = parseFloat(item.extraPrice) || 0
+                const itemTotal = (basePrice + extraPrice) * item.quantity
+                const itemKey = item.uniqueId || item.id
 
                 return (
-                  <div key={item.id} className="p-4 md:p-6 flex gap-4 md:gap-6">
+                  <div key={itemKey} className="p-4 md:p-6 flex gap-4 md:gap-6">
                     {/* תמונה */}
                     <Link to={`/product/${item.id}`} className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
                       {itemImage ? (
@@ -79,7 +88,7 @@ export default function CartPage() {
                           <h3 className="font-medium text-base md:text-lg">{item.name}</h3>
                         </Link>
                         <button
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeFromCart(itemKey)}
                           className="text-gray-400 hover:text-red-500 transition-colors p-1"
                           title="הסר מהעגלה"
                         >
@@ -95,7 +104,7 @@ export default function CartPage() {
                         {/* כפתורי כמות */}
                         <div className="flex items-center border-2 border-gray-300">
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            onClick={() => updateQuantity(itemKey, item.quantity - 1)}
                             className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 transition-colors"
                           >
                             -
@@ -104,7 +113,7 @@ export default function CartPage() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(itemKey, item.quantity + 1)}
                             className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 transition-colors"
                           >
                             +
