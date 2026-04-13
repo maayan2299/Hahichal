@@ -10,6 +10,8 @@ import FeaturedProducts from '../components/FeaturedProducts'
 export default function HomePage() {
   const [categories, setCategories] = useState([])
   const [instagramImages, setInstagramImages] = useState([])
+  const [popup, setPopup] = useState(null)
+  const [showPopup, setShowPopup] = useState(false)
   const baseUrl = supabaseUrl.endsWith('/') ? supabaseUrl.slice(0, -1) : supabaseUrl
   const mainBannerUrl = `${baseUrl}/storage/v1/object/public/banners/banner.png`
 
@@ -37,8 +39,19 @@ export default function HomePage() {
         console.error('Instagram fetch error:', err)
       }
     }
+        async function fetchPopup() {
+      const { data } = await supabase.from('popup_settings').select('*').limit(1).maybeSingle()
+      if (data?.is_active) {
+        const seen = sessionStorage.getItem('popup_seen')
+        if (!seen) {
+          setPopup(data)
+          setShowPopup(true)
+        }
+      }
+    }
     fetchCategories()
     fetchInstagramImages()
+    fetchPopup()
   }, [])
 
   return (
@@ -83,7 +96,10 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 text-center mb-8" dir="rtl">
             <p className="text-[10px] tracking-[0.3em] uppercase text-[#D4AF37] font-semibold mb-2">עקבו אחרינו</p>
             <h2 className="text-3xl md:text-5xl font-shofar">באינסטגרם</h2>
-            <p className="text-[#D4AF37] text-xs font-bold mt-1">@HAHIECHAL_JUDAICA</p>
+            <a href="https://www.instagram.com/haheichal_judaica/" target="_blank" rel="noopener noreferrer"
+              className="text-[#D4AF37] text-xs font-bold mt-1 hover:underline">
+              @HAHIECHAL_JUDAICA
+            </a>
           </div>
           <div className="flex overflow-hidden">
             <div className="flex gap-4 animate-infinite-scroll hover:pause">
@@ -169,6 +185,28 @@ export default function HomePage() {
         </svg>
       </a>
 
+
+      {showPopup && popup && (
+        <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4"
+          onClick={() => { setShowPopup(false); sessionStorage.setItem('popup_seen', '1'); }}>
+          <div className="bg-white rounded-2xl overflow-hidden max-w-sm w-full shadow-2xl relative"
+            onClick={e => e.stopPropagation()}>
+            <button onClick={() => { setShowPopup(false); sessionStorage.setItem('popup_seen', '1'); }}
+              className="absolute top-3 left-3 bg-black/50 text-white rounded-full w-7 h-7 flex items-center justify-center z-10 text-sm">✕</button>
+            {popup.image_url && <img src={popup.image_url} alt="popup" className="w-full object-cover" />}
+            {(popup.title || popup.message) && (
+              <div className="p-5 text-center" dir="rtl">
+                {popup.title && <div className="text-lg font-bold mb-2">{popup.title}</div>}
+                {popup.message && <div className="text-sm text-gray-600 mb-4">{popup.message}</div>}
+                <button onClick={() => { setShowPopup(false); sessionStorage.setItem('popup_seen', '1'); }}
+                  className="bg-[#C9A84C] text-black px-6 py-2 font-bold rounded">
+                  {popup.button_text || 'סגור'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <Footer />
 
       <style>{`

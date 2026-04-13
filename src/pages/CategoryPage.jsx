@@ -24,12 +24,38 @@ export default function CategoryPage() {
           .single()
         setCategory(categoryData)
 
-        const { data: productsData, error: productsError } = await supabase
+                // מוצרים ישירים לפי category_id
+        const { data: directProducts } = await supabase
           .from('products')
           .select('*, product_images(image_url, is_primary)')
           .eq('category_id', id)
           .eq('is_active', true)
           .order('created_at', { ascending: false })
+
+        // מוצרים נוספים דרך product_categories
+        const { data: extraLinks } = await supabase
+          .from('product_categories')
+          .select('product_id')
+          .eq('category_id', id)
+
+        let extraProducts = []
+        if (extraLinks?.length > 0) {
+          const extraIds = extraLinks.map(l => l.product_id)
+          const { data: ep } = await supabase
+            .from('products')
+            .select('*, product_images(image_url, is_primary)')
+            .in('id', extraIds)
+            .eq('is_active', true)
+          extraProducts = ep || []
+        }
+
+        // מיזוג ללא כפילויות
+        const directIds = new Set((directProducts || []).map(p => p.id))
+        const productsData = [
+          ...(directProducts || []),
+          ...extraProducts.filter(p => !directIds.has(p.id))
+        ]
+        const productsError = null
 
         if (productsError) throw productsError
         setProducts(productsData || [])

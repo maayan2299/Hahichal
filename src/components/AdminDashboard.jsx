@@ -132,7 +132,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     is_featured: false, on_sale: false, sale_type: 'percentage',
     sale_percentage: '', sale_price: '', dimensions: '', material: '',
     complementary_ids: [], product_options: [],
-    has_sizes: false, sizes: [], has_colors: false, inline_colors: []
+    has_sizes: false, sizes: [], has_colors: false, inline_colors: [], extra_category_ids: []
   });
 
   // הגדרות משלוח
@@ -258,6 +258,13 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
         }));
         await supabase.from('product_colors').insert(colorsToInsert);
       }
+      if (productForm.extra_category_ids?.length > 0) {
+        await supabase.from('product_categories').delete().eq('product_id', productId);
+        const catRows = productForm.extra_category_ids.map(cid => ({ product_id: productId, category_id: cid }));
+        await supabase.from('product_categories').insert(catRows);
+      } else {
+        await supabase.from('product_categories').delete().eq('product_id', productId);
+      }
       await loadAll();
       closeProductModal();
     } catch (e) { alert('שגיאה: ' + e.message); }
@@ -291,14 +298,14 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       complementary_ids: product.complementary_ids || [], product_options: product.product_options || [],
       has_sizes: !!(product.product_options?.find(o => o.type === 'sizes')?.values?.length),
       sizes: product.product_options?.find(o => o.type === 'sizes')?.values || [],
-      has_colors: false, inline_colors: []
+      has_colors: false, inline_colors: [], extra_category_ids: []
     } : {
       name: '', price: '', description: '', category_id: prefillCat,
       stock_quantity: 0, allows_engraving: false, engraving_types: [],
       is_featured: false, on_sale: false, sale_type: 'percentage',
       sale_percentage: '', sale_price: '', dimensions: '', material: '',
       complementary_ids: [], product_options: [],
-      has_sizes: false, sizes: [], has_colors: false, inline_colors: []
+      has_sizes: false, sizes: [], has_colors: false, inline_colors: [], extra_category_ids: []
     });
     setNewImageFile(null);
     setShowProductModal(true);
@@ -572,6 +579,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     { id: 'popup', label: 'פופ-אפ', icon: <Bell size={15}/> },
     { id: 'banner', label: 'באנר/לוגו', icon: <Image size={15}/> },
     { id: 'shipping', label: 'משלוחים', icon: <Truck size={15}/> },
+    { id: 'settings', label: 'הגדרות', icon: <Settings size={15}/> },
     { id: 'orders', label: 'הזמנות', icon: <ShoppingBag size={15}/> },
   ];
 
@@ -1403,13 +1411,12 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>מלאי</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      {[{ val: 10, label: '✅ במלאי' }, { val: 0, label: '❌ אזל המלאי' }].map(opt => (
-                        <label key={opt.val} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', background: productForm.stock_quantity == opt.val ? BK : BG, border: `1.5px solid ${productForm.stock_quantity == opt.val ? BK : BR}`, borderRadius: '8px', cursor: 'pointer' }}>
-                          <input type="radio" name="stock" checked={productForm.stock_quantity == opt.val} onChange={() => setProductForm({...productForm, stock_quantity: opt.val})} style={{ width: 'auto', accentColor: G }} />
-                          <span style={{ fontSize: '13px', fontWeight: '600', color: productForm.stock_quantity == opt.val ? WH : BK }}>{opt.label}</span>
-                        </label>
-                      ))}
+                    <input type="number" min="0" value={productForm.stock_quantity} 
+                      onChange={e => setProductForm({...productForm, stock_quantity: parseInt(e.target.value) || 0})} 
+                      style={inp} placeholder="כמות במלאי" />
+                    <div style={{ fontSize: '11px', marginTop: '5px', fontWeight: '600',
+                      color: productForm.stock_quantity > 0 ? '#16a34a' : '#dc2626' }}>
+                      {productForm.stock_quantity > 0 ? `✅ במלאי (${productForm.stock_quantity} יחידות)` : '❌ אזל המלאי'}
                     </div>
                   </div>
                 </div>
@@ -1419,6 +1426,21 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                     <option value="">בחר קטגוריה</option>
                     {categories.filter(c => !c.is_parent).map(c => <option key={c.id} value={c.id}>{c.parent_id ? `↳ ${c.name}` : c.name}</option>)}
                   </select>
+                </div>
+                <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: BK, marginBottom: '8px' }}>🗂️ קטגוריות נוספות (אופציונלי)</div>
+                  <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px' }}>המוצר יופיע גם בקטגוריות הנוספות שתסמני</div>
+                  <div style={{ display: 'grid', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
+                    {categories.filter(c => !c.is_parent && c.id?.toString() !== productForm.category_id?.toString()).map(c => (
+                      <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', background: (productForm.extra_category_ids || []).includes(c.id) ? BK : WH, borderRadius: '6px', cursor: 'pointer', border: `1px solid ${(productForm.extra_category_ids || []).includes(c.id) ? BK : BR}` }}>
+                        <input type="checkbox" checked={(productForm.extra_category_ids || []).includes(c.id)} onChange={() => {
+                          const ids = productForm.extra_category_ids || [];
+                          setProductForm({...productForm, extra_category_ids: ids.includes(c.id) ? ids.filter(id => id !== c.id) : [...ids, c.id]});
+                        }} style={{ width: 'auto', accentColor: G }} />
+                        <span style={{ fontSize: '12px', fontWeight: '500', color: (productForm.extra_category_ids || []).includes(c.id) ? WH : BK }}>{c.parent_id ? `↳ ${c.name}` : c.name}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div>

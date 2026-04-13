@@ -6,30 +6,24 @@ import { supabase } from '../lib/supabase'
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
-  const { 
-    cart, 
-    getSubtotal,
-    getShipping,
-    getTotal,
-    clearCart
-  } = useCart()
+  const { cart, getSubtotal, getShipping, clearCart } = useCart()
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    email: '',
-    street: '',
-    city: '',
-    zipCode: '',
-    shippingMethod: 'standard',
-    paymentMethod: 'credit',
-    notes: '',
-    blessing: ''
+    fullName: '', phone: '', email: '',
+    street: '', city: '', zipCode: '',
+    shippingMethod: 'standard', paymentMethod: 'credit',
+    notes: '', blessing: ''
   })
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [marketingConsent, setMarketingConsent] = useState(false)
+
+  // קופון
+  const [couponCode, setCouponCode] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
 
   const breadcrumbItems = [
     { label: 'עמוד הבית', link: '/' },
@@ -37,9 +31,48 @@ export default function CheckoutPage() {
     { label: 'תשלום', link: null }
   ]
 
-  if (cart.length === 0) {
-    navigate('/cart')
-    return null
+  if (cart.length === 0) { navigate('/cart'); return null }
+
+  const getShippingCost = () => {
+    if (formData.shippingMethod === 'pickup') return 0
+    if (formData.shippingMethod === 'express') return 60
+    return getShipping()
+  }
+
+  const shippingCost = getShippingCost()
+  const subtotal = getSubtotal()
+
+  const getCouponDiscount = () => {
+    if (!appliedCoupon) return 0
+    if (appliedCoupon.discount_type === 'percentage') {
+      return Math.round(subtotal * appliedCoupon.discount_value / 100 * 100) / 100
+    }
+    return Math.min(appliedCoupon.discount_value, subtotal)
+  }
+
+  const couponDiscount = getCouponDiscount()
+  const finalTotal = subtotal + shippingCost - couponDiscount
+
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return
+    setCouponLoading(true)
+    setCouponError('')
+    setAppliedCoupon(null)
+
+    const { data, error } = await supabase
+      .from('coupons')
+      .select('*')
+      .eq('code', couponCode.toUpperCase().trim())
+      .eq('is_active', true)
+      .single()
+
+    setCouponLoading(false)
+
+    if (error || !data) { setCouponError('קוד קופון לא תקין או לא פעיל'); return }
+    if (data.expires_at && new Date(data.expires_at) < new Date()) { setCouponError('קוד הקופון פג תוקף'); return }
+    if (data.min_order > 0 && subtotal < data.min_order) { setCouponError(`סכום מינימלי להזמנה: ₪${data.min_order}`); return }
+
+    setAppliedCoupon(data)
   }
 
   const validateForm = () => {
@@ -77,15 +110,7 @@ export default function CheckoutPage() {
     }
     setIsSubmitting(true)
     try {
-      let shippingCost = 0
-      if (formData.shippingMethod === 'express') shippingCost = 60
-      else if (formData.shippingMethod === 'standard') shippingCost = getShipping()
-
       const orderNumber = `HIK-${Date.now()}`
-      const subtotal = getSubtotal()
-      const total = subtotal + shippingCost
-
-      // שמור הזמנה ב-Supabase
       const { error } = await supabase.from('orders').insert([{
         order_number: orderNumber,
         customer_name: formData.fullName,
@@ -99,7 +124,7 @@ export default function CheckoutPage() {
         payment_method: formData.paymentMethod,
         subtotal,
         shipping_cost: shippingCost,
-        total,
+        total: finalTotal,
         notes: formData.notes || null,
         blessing: formData.blessing || null,
         marketing_consent: marketingConsent,
@@ -107,11 +132,9 @@ export default function CheckoutPage() {
       }])
 
       if (error) throw error
-
       clearCart()
       alert(`הזמנה בוצעה בהצלחה! 🎉\n\nמספר הזמנה: ${orderNumber}\n\nנציג יצור איתך קשר בהקדם.\n\nתודה שבחרת בההיכל!`)
       navigate('/')
-
     } catch (error) {
       console.error('Order submission error:', error)
       alert('אירעה שגיאה בביצוע ההזמנה. אנא נסה שוב.')
@@ -126,26 +149,16 @@ export default function CheckoutPage() {
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }))
   }
 
-  const getShippingCost = () => {
-    if (formData.shippingMethod === 'pickup') return 0
-    if (formData.shippingMethod === 'express') return 60
-    return getShipping()
-  }
-
-  const shippingCost = getShippingCost()
-  const finalTotal = getSubtotal() + shippingCost
-
   return (
     <div className="min-h-screen bg-white" dir="rtl">
       <Breadcrumbs items={breadcrumbItems} />
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <h1 className="text-3xl md:text-4xl font-bold mb-8">תשלום והזמנה</h1>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* טופס תשלום */}
+
           <div className="lg:col-span-2">
             <form onSubmit={handleCheckout} className="space-y-8">
-              
+
               {/* פרטי לקוח */}
               <div className="bg-white border border-gray-200 p-6">
                 <h2 className="text-2xl font-bold mb-6">פרטי לקוח</h2>
@@ -243,6 +256,40 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {/* קופון */}
+              <div className="bg-white border border-gray-200 p-6">
+                <h2 className="text-2xl font-bold mb-6">🏷️ קוד קופון</h2>
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded p-4">
+                    <div>
+                      <div className="font-bold text-green-700">✅ קופון הוחל!</div>
+                      <div className="text-sm text-green-600 mt-1">
+                        {appliedCoupon.code} — {appliedCoupon.discount_type === 'percentage' ? `${appliedCoupon.discount_value}% הנחה` : `₪${appliedCoupon.discount_value} הנחה`}
+                      </div>
+                      <div className="text-sm font-bold text-green-700 mt-1">חסכת: ₪{couponDiscount.toLocaleString('he-IL')}</div>
+                    </div>
+                    <button type="button" onClick={() => { setAppliedCoupon(null); setCouponCode(''); }}
+                      className="text-gray-400 hover:text-red-500 text-xl font-bold">✕</button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex gap-3">
+                      <input type="text" value={couponCode}
+                        onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(''); }}
+                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), applyCoupon())}
+                        placeholder="הכנס קוד קופון"
+                        className="flex-1 border-2 border-gray-300 p-3 focus:border-black focus:outline-none transition-colors"
+                        style={{ letterSpacing: '2px' }} />
+                      <button type="button" onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}
+                        className="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        {couponLoading ? '...' : 'החל'}
+                      </button>
+                    </div>
+                    {couponError && <p className="text-red-500 text-sm mt-2">{couponError}</p>}
+                  </div>
+                )}
+              </div>
+
               {/* ברכה אישית */}
               <div className="bg-white border border-gray-200 p-6">
                 <h2 className="text-2xl font-bold mb-6">ברכה אישית</h2>
@@ -303,7 +350,7 @@ export default function CheckoutPage() {
               <div className="border-t border-gray-300 pt-4 space-y-3 mb-6">
                 <div className="flex justify-between text-base">
                   <span className="text-gray-600">סכום ביניים:</span>
-                  <span className="font-medium">₪{getSubtotal().toLocaleString('he-IL')}</span>
+                  <span className="font-medium">₪{subtotal.toLocaleString('he-IL')}</span>
                 </div>
                 <div className="flex justify-between text-base">
                   <span className="text-gray-600">משלוח:</span>
@@ -311,6 +358,12 @@ export default function CheckoutPage() {
                     {shippingCost === 0 ? <span className="text-green-600">חינם!</span> : `₪${shippingCost}`}
                   </span>
                 </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-base text-green-600 font-medium">
+                    <span>הנחת קופון ({appliedCoupon?.code}):</span>
+                    <span>-₪{couponDiscount.toLocaleString('he-IL')}</span>
+                  </div>
+                )}
                 <div className="border-t-2 border-gray-300 pt-3 flex justify-between font-bold text-xl">
                   <span>סה"כ לתשלום:</span>
                   <span>₪{finalTotal.toLocaleString('he-IL')}</span>
