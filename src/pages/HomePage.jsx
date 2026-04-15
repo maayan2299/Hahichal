@@ -39,7 +39,7 @@ export default function HomePage() {
         console.error('Instagram fetch error:', err)
       }
     }
-        async function fetchPopup() {
+    async function fetchPopup() {
       const { data } = await supabase.from('popup_settings').select('*').limit(1).maybeSingle()
       if (data?.is_active) {
         const seen = sessionStorage.getItem('popup_seen')
@@ -76,16 +76,36 @@ export default function HomePage() {
       <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-5xl mb-8 font-shofar">הקטגוריות שלנו</h2>
-          <div className="overflow-x-auto scrollbar-hide flex gap-3 snap-x snap-mandatory px-1">
-            {categories.map((cat) => (
-              <Link key={cat.id} to={`/category/${cat.id}`} className="relative flex-shrink-0 w-[calc(33.33%-8px)] md:w-[280px] aspect-[3/4] rounded-xl overflow-hidden snap-start shadow-sm">
-                <img src={cat.image_url || `${baseUrl}/storage/v1/object/public/categories/${cat.slug || cat.id}.png`} className="w-full h-full object-cover" alt={cat.name} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <div className="absolute bottom-2 inset-x-0 text-center px-1">
-                  <h3 className="text-white text-[12px] md:text-xl font-shofar truncate">{cat.name}</h3>
-                </div>
-              </Link>
-            ))}
+          <div className="relative">
+            {/* חץ שמאל */}
+            <button
+              onClick={() => document.getElementById('cat-scroll').scrollBy({ left: -300, behavior: 'smooth' })}
+              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full w-10 h-10 items-center justify-center transition-all border border-gray-100">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* חץ ימין */}
+            <button
+              onClick={() => document.getElementById('cat-scroll').scrollBy({ left: 300, behavior: 'smooth' })}
+              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full w-10 h-10 items-center justify-center transition-all border border-gray-100">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            <div id="cat-scroll" className="overflow-x-auto scrollbar-hide flex gap-3 snap-x snap-mandatory px-1">
+              {categories.map((cat) => (
+                <Link key={cat.id} to={`/category/${cat.id}`} className="relative flex-shrink-0 w-[calc(33.33%-8px)] md:w-[280px] aspect-[3/4] rounded-xl overflow-hidden snap-start shadow-sm">
+                  <img src={cat.image_url || `${baseUrl}/storage/v1/object/public/categories/${cat.slug || cat.id}.png`} className="w-full h-full object-cover" alt={cat.name} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-2 inset-x-0 text-center px-1">
+                    <h3 className="text-white text-[12px] md:text-xl font-shofar truncate">{cat.name}</h3>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -185,7 +205,6 @@ export default function HomePage() {
         </svg>
       </a>
 
-
       {showPopup && popup && (
         <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4"
           onClick={() => { setShowPopup(false); sessionStorage.setItem('popup_seen', '1'); }}>
@@ -221,7 +240,7 @@ export default function HomePage() {
           display: flex;
           width: max-content;
         }
-        .hover\:pause:hover { animation-play-state: paused; }
+        .hover\\:pause:hover { animation-play-state: paused; }
       `}</style>
     </div>
   )

@@ -132,7 +132,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     is_featured: false, on_sale: false, sale_type: 'percentage',
     sale_percentage: '', sale_price: '', dimensions: '', material: '',
     complementary_ids: [], product_options: [],
-    has_sizes: false, sizes: [], has_colors: false, inline_colors: [], extra_category_ids: []
+    has_sizes: false, sizes: [], has_colors: false, inline_colors: [], extra_category_ids: [], engraving_prices: {}
   });
 
   // הגדרות משלוח
@@ -298,14 +298,14 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       complementary_ids: product.complementary_ids || [], product_options: product.product_options || [],
       has_sizes: !!(product.product_options?.find(o => o.type === 'sizes')?.values?.length),
       sizes: product.product_options?.find(o => o.type === 'sizes')?.values || [],
-      has_colors: false, inline_colors: [], extra_category_ids: []
+      has_colors: false, inline_colors: [], extra_category_ids: [], engraving_prices: {}
     } : {
       name: '', price: '', description: '', category_id: prefillCat,
       stock_quantity: 0, allows_engraving: false, engraving_types: [],
       is_featured: false, on_sale: false, sale_type: 'percentage',
       sale_percentage: '', sale_price: '', dimensions: '', material: '',
       complementary_ids: [], product_options: [],
-      has_sizes: false, sizes: [], has_colors: false, inline_colors: [], extra_category_ids: []
+      has_sizes: false, sizes: [], has_colors: false, inline_colors: [], extra_category_ids: [], engraving_prices: {}
     });
     setNewImageFile(null);
     setShowProductModal(true);
@@ -1475,14 +1475,30 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                     <div style={{ fontSize: '13px', fontWeight: '600', color: BK, marginBottom: '10px' }}>בחר סוגי התאמה אישית (ניתן לסמן כמה):</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       {ENGRAVING_OPTIONS.map(opt => {
-                        const isChecked = productForm.engraving_types?.includes(opt.value);
-                        return (
-                          <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: isChecked ? BK : WH, borderRadius: '8px', cursor: 'pointer', border: `1.5px solid ${isChecked ? G : BR}`, transition: 'all 0.15s' }}>
-                            <input type="checkbox" checked={isChecked} onChange={() => toggleEngravingType(opt.value)} style={{ width: 'auto', accentColor: G }} />
-                            <span style={{ fontSize: '13px', fontWeight: '600', color: isChecked ? WH : BK }}>{opt.icon} {opt.label}</span>
-                          </label>
-                        );
-                      })}
+                          const isChecked = productForm.engraving_types?.includes(opt.value);
+                          return (
+                            <div key={opt.value}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: isChecked ? BK : WH, borderRadius: '8px', cursor: 'pointer', border: `1.5px solid ${isChecked ? G : BR}`, transition: 'all 0.15s' }}>
+                                <input type="checkbox" checked={isChecked} onChange={() => toggleEngravingType(opt.value)} style={{ width: 'auto', accentColor: G }} />
+                                <span style={{ fontSize: '13px', fontWeight: '600', color: isChecked ? WH : BK }}>{opt.icon} {opt.label}</span>
+                              </label>
+                              {isChecked && (
+                              <div style={{ marginTop: '6px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                                <input type="number" min="0" step="0.01"
+                                  value={productForm.engraving_prices?.[opt.value]?.fixed || ''}
+                                  onChange={e => setProductForm({...productForm, engraving_prices: {...(productForm.engraving_prices || {}), [opt.value]: {...(productForm.engraving_prices?.[opt.value] || {}), fixed: parseFloat(e.target.value) || 0}}})}
+                                  placeholder="מחיר כללי (₪)"
+                                  style={{ ...inp, padding: '8px 10px', fontSize: '12px' }} />
+                                <input type="number" min="0" step="0.01"
+                                  value={productForm.engraving_prices?.[opt.value]?.per_letter || ''}
+                                  onChange={e => setProductForm({...productForm, engraving_prices: {...(productForm.engraving_prices || {}), [opt.value]: {...(productForm.engraving_prices?.[opt.value] || {}), per_letter: parseFloat(e.target.value) || 0}}})}
+                                  placeholder="מחיר למילה (₪)"
+                                  style={{ ...inp, padding: '8px 10px', fontSize: '12px' }} />
+                              </div>
+                              )}
+                            </div>
+                          );
+                        })}
                     </div>
                     {productForm.engraving_types?.length > 0 && (
                       <div style={{ marginTop: '10px', fontSize: '12px', color: '#8a6d00' }}>

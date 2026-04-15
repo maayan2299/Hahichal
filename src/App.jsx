@@ -5,6 +5,7 @@ import { CartProvider } from './context/CartContext'
 import HomePage from './pages/HomePage'
 import ProductDetail from './pages/ProductDetail'
 import CategoryPage from './pages/CategoryPage'
+import SearchPage from './pages/SearchPage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import PrivacyPolicy from './pages/PrivacyPolicy'
@@ -60,6 +61,7 @@ function App() {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/search" element={<SearchPage />} />
 
           {/* דשבורד ניהול */}
           <Route path="/admin" element={<AdminDashboard />} />
