@@ -9,6 +9,7 @@ import SearchPage from './pages/SearchPage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import PrivacyPolicy from './pages/PrivacyPolicy'
+import SuccessPage from './pages/SuccessPage'
 
 // ייבוא דשבורד
 import AdminDashboard from './components/AdminDashboard'
@@ -62,7 +63,7 @@ function App() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/search" element={<SearchPage />} />
-
+          <Route path="/success" element={<SuccessPage />} />
           {/* דשבורד ניהול */}
           <Route path="/admin" element={<AdminDashboard />} />
 

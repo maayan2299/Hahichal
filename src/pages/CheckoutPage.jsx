@@ -103,41 +103,74 @@ export default function CheckoutPage() {
 
   const handleCheckout = async (e) => {
     e.preventDefault()
+    
     if (!validateForm()) {
       const firstError = document.querySelector('.border-red-500')
       if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
+
     setIsSubmitting(true)
+
     try {
       const orderNumber = `HIK-${Date.now()}`
-      const { error } = await supabase.from('orders').insert([{
+
+      // וידוא שהנתונים תואמים בדיוק לעמודות ב-Supabase
+      const orderData = {
         order_number: orderNumber,
         customer_name: formData.fullName,
         customer_email: formData.email,
         customer_phone: formData.phone,
-        items: cart,
+        items: cart, // נשמר כ-JSONB
         shipping_method: formData.shippingMethod,
         shipping_address: formData.shippingMethod === 'pickup'
           ? { address: 'איסוף עצמי מבת-ים' }
           : { street: formData.street, city: formData.city, zip: formData.zipCode },
         payment_method: formData.paymentMethod,
-        subtotal,
-        shipping_cost: shippingCost,
-        total: finalTotal,
+        subtotal: Number(subtotal),
+        shipping_cost: Number(shippingCost),
+        total: Number(finalTotal),
         notes: formData.notes || null,
         blessing: formData.blessing || null,
         marketing_consent: marketingConsent,
         status: 'pending'
-      }])
+      }
 
-      if (error) throw error
-      clearCart()
-      alert(`הזמנה בוצעה בהצלחה! 🎉\n\nמספר הזמנה: ${orderNumber}\n\nנציג יצור איתך קשר בהקדם.\n\nתודה שבחרת בההיכל!`)
-      navigate('/')
+      // 3. שמירה ל-Supabase
+      const { error: dbError } = await supabase.from('orders').insert([orderData])
+
+      if (dbError) {
+        console.error('Supabase Error:', dbError)
+        throw new Error('שגיאה בשמירת הנתונים בבסיס הנתונים')
+      }
+
+      // 4. פנייה ל-HYP
+      const response = await fetch('/api/create-hyp-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: finalTotal,
+          orderId: orderNumber,
+          customerName: formData.fullName
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`שגיאה מהשרת: ${errorText}`);
+      }
+
+      const paymentData = await response.json();
+
+      if (paymentData.url) {
+        window.location.href = paymentData.url;
+      } else {
+        throw new Error(paymentData.error || 'לא התקבל קישור תשלום');
+      }
+
     } catch (error) {
-      console.error('Order submission error:', error)
-      alert('אירעה שגיאה בביצוע ההזמנה. אנא נסה שוב.')
+      console.error('Checkout Error:', error)
+      alert('אירעה שגיאה: ' + error.message)
     } finally {
       setIsSubmitting(false)
     }

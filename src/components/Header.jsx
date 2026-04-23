@@ -60,13 +60,31 @@ export default function Header() {
     setCloseTimeout(t)
   }
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
-      setSearchOpen(false)
-      setSearchQuery('')
-    }
+  const [searchResults, setSearchResults] = useState([])
+const [searchLoading, setSearchLoading] = useState(false)
+
+const handleSearch = () => {
+  if (searchQuery.trim()) {
+    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+    setSearchOpen(false)
+    setSearchQuery('')
+    setSearchResults([])
   }
+}
+
+const handleSearchInput = async (val) => {
+  setSearchQuery(val)
+  if (val.trim().length < 2) { setSearchResults([]); return }
+  setSearchLoading(true)
+  const { data } = await supabase
+    .from('products')
+    .select('id, name, price, sale_price, product_images(image_url, is_primary)')
+    .eq('is_active', true)
+    .ilike('name', `%${val}%`)
+    .limit(5)
+  setSearchResults(data || [])
+  setSearchLoading(false)
+}
 
   const navFont = { fontFamily: "'Shofar', serif", fontSize: '18px' }
 
