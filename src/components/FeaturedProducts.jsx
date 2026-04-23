@@ -42,13 +42,29 @@ export default function FeaturedProducts() {
         <div className="w-16 md:w-24 h-0.5 bg-[#D4AF37] mx-auto mt-2 md:mt-4 opacity-30"></div>
       </div>
 
-      <div className="overflow-x-auto scrollbar-hide px-4">
-        <div className="flex gap-4 pb-2">
-          {products.map((product) => (
-            <div key={product.id} className="flex-shrink-0 w-[180px] md:w-[260px]">
-              <ProductCard product={product} />
-            </div>
-          ))}
+      <div className="relative">
+        <button
+          onClick={() => document.getElementById('featured-scroll').scrollBy({ left: -300, behavior: 'smooth' })}
+          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full w-10 h-10 items-center justify-center border border-gray-100">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button
+          onClick={() => document.getElementById('featured-scroll').scrollBy({ left: 300, behavior: 'smooth' })}
+          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full w-10 h-10 items-center justify-center border border-gray-100">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+        <div id="featured-scroll" className="overflow-x-auto scrollbar-hide px-4">
+          <div className="flex gap-4 pb-2">
+            {products.map((product) => (
+              <div key={product.id} className="flex-shrink-0 w-[180px] md:w-[260px]">
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
