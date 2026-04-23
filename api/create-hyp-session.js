@@ -40,23 +40,22 @@ export default async function handler(req, res) {
       throw new Error('לא התקבל signature: ' + signText.substring(0, 200));
     }
 
-    // שלב 2 - בניית URL לדף תשלום
+        // שלב 2 - בניית URL לדף תשלום עם אותם פרמטרים בדיוק
     const paymentParams = new URLSearchParams({
-      action: 'pay',
-      Masof: MASOF,
-      Order: String(orderId),
-      Amount: String(Math.round(Number(amount) * 100)),
-      PageLang: 'HEB',
-      UTF8: 'True',
-      UTF8out: 'True',
-      signature: signature,
+    action: 'pay',
+    Masof: MASOF,
+    Order: String(orderId),
+    Amount: String(Math.round(Number(amount) * 100)),
+    Info: customerName || 'הזמנה',
+    email: customerEmail || '',
+    SuccessUrl: 'https://www.hahiechal.co.il/success',
+    CancelUrl: 'https://www.hahiechal.co.il/checkout',
+    PageLang: 'HEB',
+    UTF8: 'True',
+    UTF8out: 'True',
+    Sign: 'True',
+    signature: signature,
     });
 
     const paymentUrl = `https://icom.yaad.net/p/?${paymentParams.toString()}`;
-    return res.status(200).json({ url: paymentUrl });
-
-  } catch (error) {
-    console.error('API Error:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-}
+    return res.status(200).json({ url: paymentUrl });   
