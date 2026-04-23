@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 
 const LOGO_LIGHT = 'https://taewbxptprdixsusvjfh.supabase.co/storage/v1/object/public/banners/logo.png'
 const LOGO_DARK = 'https://taewbxptprdixsusvjfh.supabase.co/storage/v1/object/public/banners/logo-Dark.png'
-const WHATSAPP = 'https://wa.me/972515021295'
+const WHATSAPP = 'https://wa.me/972542115584'
 
 export default function Header() {
   const navigate = useNavigate()

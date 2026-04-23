@@ -8,7 +8,7 @@ function ScrollToTop() {
 }
 
 const LOGO_URL = 'https://taewbxptprdixsusvjfh.supabase.co/storage/v1/object/public/banners/logo.png'
-const WHATSAPP = 'https://wa.me/972515021295'
+const WHATSAPP = 'https://wa.me/972542115584'
 const INSTAGRAM = 'https://www.instagram.com/haheichal_judaica/'
 
 export default function Footer() {
