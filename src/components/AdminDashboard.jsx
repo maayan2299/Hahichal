@@ -1660,7 +1660,11 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', marginBottom: '12px' }}>
               <input value={newColor.name} onChange={e => setNewColor({...newColor, name: e.target.value})} placeholder="שם צבע" style={inp} />
-              <input value={newColor.code} onChange={e => setNewColor({...newColor, code: e.target.value})} placeholder="#4d4037" style={inp} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input type="color" value={newColor.code || '#C9A84C'} onChange={e => setNewColor({...newColor, code: e.target.value})}
+                  style={{ width: '44px', height: '44px', border: `1.5px solid ${BR}`, borderRadius: '8px', cursor: 'pointer', padding: '2px' }} />
+                <span style={{ fontSize: '12px', color: '#aaa' }}>{newColor.code || '#C9A84C'}</span>
+              </div>
               <button onClick={addColor} style={btn(G, BK, { fontSize: '13px' })}>+ הוסף</button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
