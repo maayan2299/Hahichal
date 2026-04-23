@@ -316,7 +316,10 @@ export default function ProductDetail() {
                     ))}
                 </div>
                 {selectedOptions.color && (
-                  <p className="text-xs text-gray-500 mt-1">{selectedOptions.color.color_name}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {selectedOptions.color.color_name}
+                    {selectedOptions.color.price_delta > 0 && ` (+₪${selectedOptions.color.price_delta})`}
+                  </p>
                 )}
               </div>
             )}

@@ -360,9 +360,9 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     if (!newColor.name || !newColor.code) { alert('מלא שם וקוד'); return; }
     let c = newColor.code.trim();
     if (!c.startsWith('#')) c = '#' + c;
-    await supabase.from('product_colors').insert([{ product_id: showColorsModal.id, color_name: newColor.name, color_code: c.toLowerCase(), display_order: productColors.length }]);
+    await supabase.from('product_colors').insert([{ product_id: showColorsModal.id, color_name: newColor.name, color_code: c.toLowerCase(), display_order: productColors.length, price_delta: newColor.price_delta || 0 }]);
     const { data } = await supabase.from('product_colors').select('*').eq('product_id', showColorsModal.id);
-    setProductColors(data || []); setNewColor({ name: '', code: '' }); await loadAll();
+    setProductColors(data || []); setNewColor({ name: '', code: '', price_delta: 0 }); await loadAll();
   };
   const deleteColor = async (id) => {
     if (!confirm('למחוק?')) return;
@@ -1660,6 +1660,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', marginBottom: '12px' }}>
               <input value={newColor.name} onChange={e => setNewColor({...newColor, name: e.target.value})} placeholder="שם צבע" style={inp} />
+              <input type="number" min="0" step="0.01" value={newColor.price_delta || ''} onChange={e => setNewColor({...newColor, price_delta: parseFloat(e.target.value) || 0})} placeholder="תוספת מחיר ₪" style={inp} />
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input type="color" value={newColor.code || '#C9A84C'} onChange={e => setNewColor({...newColor, code: e.target.value})}
                   style={{ width: '44px', height: '44px', border: `1.5px solid ${BR}`, borderRadius: '8px', cursor: 'pointer', padding: '2px' }} />
