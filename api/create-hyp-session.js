@@ -14,25 +14,26 @@ export default async function handler(req, res) {
       Order: String(orderId),
       Info: customerName || 'הזמנה',
       email: customerEmail || '',
-      SuccessUrl: `https://www.hahiechal.co.il/success?order=${orderId}`,
-      CancelUrl: `https://www.hahiechal.co.il/checkout`,
+      SuccessUrl: 'https://www.hahiechal.co.il/success',
+      CancelUrl: 'https://www.hahiechal.co.il/checkout',
       PageLang: 'HEB',
       UTF8: 'True',
       UTF8out: 'True',
     });
 
-    const response = await fetch(
-      `https://icom.yaad.net/p/?${params.toString()}`
-    );
-
+    const hypUrl = `https://icom.yaad.net/p/?${params.toString()}`;
+    const response = await fetch(hypUrl);
     const text = await response.text();
 
-    // HYP מחזיר URL בתשובה
-    if (text.includes('http')) {
-      res.status(200).json({ url: text.trim() });
-    } else {
-      throw new Error('HYP Error: ' + text);
+    console.log('HYP Response:', text);
+
+    // HYP מחזיר URL שמתחיל ב-https
+    const urlMatch = text.match(/https?:\/\/[^\s"<>]+/);
+    if (urlMatch) {
+      return res.status(200).json({ url: urlMatch[0] });
     }
+
+    throw new Error('HYP לא החזיר URL תקין: ' + text.substring(0, 200));
 
   } catch (error) {
     console.error('API Error:', error.message);
