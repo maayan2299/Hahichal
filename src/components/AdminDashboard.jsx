@@ -1582,52 +1582,6 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                   )}
                 </div>
 
-                {/* צבעים */}
-                <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', marginBottom: productForm.has_colors ? '12px' : '0' }}>
-                    <input type="checkbox" checked={productForm.has_colors || false} onChange={e => setProductForm({...productForm, has_colors: e.target.checked})} style={{ width: 'auto', accentColor: G }} />
-                    <span style={{ fontSize: '13px', fontWeight: '600' }}>🎨 יש צבעים</span>
-                  </label>
-                  {productForm.has_colors && (
-                    <div>
-                      <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px' }}>הוסף צבעים — שם + בחר צבע מהפלטה</div>
-                      <div style={{ display: 'grid', gap: '6px', marginBottom: '8px' }}>
-                        {(productForm.inline_colors || []).map((c, idx) => (
-                          <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                            <input value={c.name} onChange={e => {
-                              const colors = [...productForm.inline_colors];
-                              colors[idx] = { ...colors[idx], name: e.target.value };
-                              setProductForm({...productForm, inline_colors: colors});
-                            }} placeholder="שם הצבע, למשל: זהב" style={{ ...inp, flex: 1, padding: '8px 10px', fontSize: '13px' }} />
-                            <input type="color" value={c.code || '#C9A84C'} onChange={e => {
-                              const colors = [...productForm.inline_colors];
-                              colors[idx] = { ...colors[idx], code: e.target.value };
-                              setProductForm({...productForm, inline_colors: colors});
-                            }} style={{ width: '44px', height: '40px', border: `1.5px solid ${BR}`, borderRadius: '8px', cursor: 'pointer', padding: '2px' }} />
-                            <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: c.code || '#C9A84C', border: `1px solid ${BR}` }}></div>
-                            <button type="button" onClick={() => {
-                              const colors = productForm.inline_colors.filter((_, i) => i !== idx);
-                              setProductForm({...productForm, inline_colors: colors, has_colors: colors.length > 0});
-                            }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb' }}><X size={14}/></button>
-                          </div>
-                        ))}
-                      </div>
-                      <button type="button" onClick={() => setProductForm({...productForm, inline_colors: [...(productForm.inline_colors || []), { name: '', code: '#C9A84C' }]})}
-                        style={{ ...btn(BK, WH, { padding: '6px 12px', fontSize: '12px' }) }}><Plus size={11}/> הוסף צבע</button>
-                      {(productForm.inline_colors || []).filter(c => c.name).length > 0 && (
-                        <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          {productForm.inline_colors.filter(c => c.name).map((c, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: WH, border: `1px solid ${BR}`, borderRadius: '20px', padding: '3px 10px 3px 6px' }}>
-                              <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: c.code }}></div>
-                              <span style={{ fontSize: '11px', fontWeight: '600' }}>{c.name}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
                 {/* מוצרים משלימים */}
                 <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
                   <div style={{ fontSize: '13px', fontWeight: '700', color: BK, marginBottom: '10px' }}>🔗 מוצרים משלימים (המלצה)</div>
