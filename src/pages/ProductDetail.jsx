@@ -289,6 +289,7 @@ export default function ProductDetail() {
             {/* התאמה אישית */}
             {hasCustomization && engravingTypes.map(type => {
               const config = engravingConfig[type]
+                if (!config) return null
               const data = customizationData[type] || {}
               return (
                 <div key={type} className="border border-gray-200 rounded-lg mb-4 overflow-hidden shadow-sm">
