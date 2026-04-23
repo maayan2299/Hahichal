@@ -222,7 +222,7 @@ export default function ProductDetail() {
               </div>
             )}
             <div className="flex-1 aspect-square bg-gray-50 border border-gray-100 overflow-hidden">
-              <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
+              <img src={mainImage} alt={product.name} className="w-full h-full object-contain" />
             </div>
           </div>
 
@@ -283,6 +283,33 @@ export default function ProductDetail() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* צבעי מוצר */}
+            {product.product_colors?.length > 0 && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium mb-2">צבע</label>
+                <div className="flex flex-wrap gap-2">
+                  {[...product.product_colors]
+                    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+                    .map(color => (
+                      <button
+                        key={color.id}
+                        onClick={() => setSelectedOptions(prev => ({ ...prev, color: color }))}
+                        title={color.color_name}
+                        className={`w-9 h-9 rounded-full border-2 transition-all ${
+                          selectedOptions.color?.id === color.id
+                            ? 'border-black scale-110'
+                            : 'border-gray-300 hover:border-gray-500'
+                        }`}
+                        style={{ backgroundColor: color.color_code }}
+                      />
+                    ))}
+                </div>
+                {selectedOptions.color && (
+                  <p className="text-xs text-gray-500 mt-1">{selectedOptions.color.color_name}</p>
+                )}
               </div>
             )}
 
