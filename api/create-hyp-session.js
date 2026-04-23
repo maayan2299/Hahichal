@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     });
 
     const signResponse = await fetch(
-      `https://pay.hyp.co.il/p/?${apiSignParams.toString()}`
+      `https://icom.yaad.net/p/?${apiSignParams.toString()}`
     );
     const signText = await signResponse.text();
     console.log('Step 1 response:', signText);
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       signature: signature,
     });
 
-    const paymentUrl = `https://pay.hyp.co.il/p/?${paymentParams.toString()}`;
+    const paymentUrl = `https://icom.yaad.net/p/?${paymentParams.toString()}`;
     return res.status(200).json({ url: paymentUrl });
 
   } catch (error) {
