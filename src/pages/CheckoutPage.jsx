@@ -103,7 +103,7 @@ export default function CheckoutPage() {
 
   const handleCheckout = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       const firstError = document.querySelector('.border-red-500')
       if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -124,7 +124,7 @@ export default function CheckoutPage() {
         items: cart, // נשמר כ-JSONB
         shipping_method: formData.shippingMethod,
         shipping_address: formData.shippingMethod === 'pickup'
-          ? { address: 'איסוף עצמי מבת-ים' }
+          ? { address: 'איסוף עצמי מקריית אתא' }
           : { street: formData.street, city: formData.city, zip: formData.zipCode },
         payment_method: formData.paymentMethod,
         subtotal: Number(subtotal),
@@ -227,7 +227,7 @@ export default function CheckoutPage() {
                   {[
                     { val: 'standard', title: 'משלוח רגיל', desc: `בין 5-7 ימי עסקים • ${getShipping() === 0 ? 'חינם!' : `₪${getShipping()}`}` },
                     { val: 'express', title: 'משלוח מהיר', desc: '1-2 ימי עסקים • ₪60' },
-                    { val: 'pickup', title: 'איסוף עצמי מבת-ים', desc: 'ללא עלות' },
+                    { val: 'pickup', title: 'איסוף עצמי מקריית אתא', desc: 'ללא עלות' },
                   ].map(opt => (
                     <label key={opt.val} className={`flex items-center p-4 border-2 cursor-pointer transition-colors ${formData.shippingMethod === opt.val ? 'border-black bg-gray-50' : 'border-gray-300 hover:border-gray-400'}`}>
                       <input type="radio" name="shippingMethod" value={opt.val} checked={formData.shippingMethod === opt.val} onChange={handleInputChange} className="ml-3" />

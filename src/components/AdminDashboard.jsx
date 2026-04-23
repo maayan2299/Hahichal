@@ -139,7 +139,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
   const DEFAULT_SHIPPING = {
     standard: { name: 'משלוח רגיל', description: '5-7 ימי עסקים', price: 35, free_above: 400, enabled: true },
     express: { name: 'משלוח מהיר', description: '1-2 ימי עסקים', price: 60, enabled: true },
-    pickup: { name: 'איסוף עצמי מבת-ים', description: 'ללא עלות', price: 0, enabled: true }
+    pickup: { name: 'איסוף עצמי מקריית אתא', description: 'ללא עלות', price: 0, enabled: true }
   };
   const DEFAULT_BRANDING = {
     engraving: { price: 10, text_limit: 30 },
