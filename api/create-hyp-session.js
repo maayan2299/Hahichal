@@ -4,12 +4,17 @@ export default async function handler(req, res) {
   try {
     const { amount, orderId, customerName, customerEmail } = req.body;
 
-    const params = new URLSearchParams({
+    const MASOF = process.env.HYP_TERMINAL_ID.trim();
+    const KEY = process.env.HYP_API_KEY.trim();
+    const PASSP = process.env.HYP_PASSP.trim();
+
+    // שלב 1 - קבלת signature
+    const apiSignParams = new URLSearchParams({
       action: 'APISign',
       What: 'SIGN',
-      KEY: process.env.HYP_API_KEY.trim(),
-      PassP: process.env.HYP_PASSP.trim(),
-      Masof: process.env.HYP_TERMINAL_ID.trim(),
+      KEY: KEY,
+      PassP: PASSP,
+      Masof: MASOF,
       Amount: String(Math.round(Number(amount) * 100)),
       Order: String(orderId),
       Info: customerName || 'הזמנה',
@@ -22,15 +27,33 @@ export default async function handler(req, res) {
       Sign: 'True',
     });
 
-    const response = await fetch(`https://icom.yaad.net/p/?${params.toString()}`);
-    const text = await response.text();
-    console.log('HYP Response:', text);
+    const signResponse = await fetch(
+      `https://pay.hyp.co.il/p/?${apiSignParams.toString()}`
+    );
+    const signText = await signResponse.text();
+    console.log('Step 1 response:', signText);
 
-    if (text.startsWith('https')) {
-      return res.status(200).json({ url: text.trim() });
+    const signParams = new URLSearchParams(signText);
+    const signature = signParams.get('signature');
+
+    if (!signature) {
+      throw new Error('לא התקבל signature: ' + signText.substring(0, 200));
     }
 
-    throw new Error('HYP Error: ' + text.substring(0, 300));
+    // שלב 2 - בניית URL לדף תשלום
+    const paymentParams = new URLSearchParams({
+      action: 'pay',
+      Masof: MASOF,
+      Order: String(orderId),
+      Amount: String(Math.round(Number(amount) * 100)),
+      PageLang: 'HEB',
+      UTF8: 'True',
+      UTF8out: 'True',
+      signature: signature,
+    });
+
+    const paymentUrl = `https://pay.hyp.co.il/p/?${paymentParams.toString()}`;
+    return res.status(200).json({ url: paymentUrl });
 
   } catch (error) {
     console.error('API Error:', error.message);
