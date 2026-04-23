@@ -7,10 +7,7 @@ import { supabase } from '../lib/supabase'
 
 const ENGRAVING_CONFIG = {
   engraving: {
-    label: 'חריטה',
-    icon: '✍️',
-    priceLabel: '₪10',
-    price: 10,
+    label: 'חריטה', icon: '✍️', priceLabel: '₪10', price: 10,
     fields: ['text', 'color'],
     textPlaceholder: 'הקלידו שם ומשפחה (עד 3 מילים)',
     textLabel: 'שם לחריטה :',
@@ -22,10 +19,7 @@ const ENGRAVING_CONFIG = {
     ]
   },
   embroidery: {
-    label: 'רקמה',
-    icon: '🧵',
-    priceLabel: '₪40',
-    price: 40,
+    label: 'רקמה', icon: '🧵', priceLabel: '₪40', price: 40,
     fields: ['checkbox', 'text', 'color'],
     checkboxLabel: 'אני מעוניין/ת ברקמת שם על הכיסוי',
     textLabel: 'שם לרקמה בכיסויים :',
@@ -44,10 +38,7 @@ const ENGRAVING_CONFIG = {
     ]
   },
   embossing: {
-    label: 'הטבעה',
-    icon: '🔏',
-    priceLabel: '₪15',
-    price: 15,
+    label: 'הטבעה', icon: '🔏', priceLabel: '₪15', price: 15,
     fields: ['text', 'color'],
     textLabel: 'שם להטבעה :',
     textPlaceholder: 'הקלידו שם ומשפחה (עד 3 מילים)',
@@ -58,10 +49,7 @@ const ENGRAVING_CONFIG = {
     ]
   },
   printing: {
-    label: 'הדפסה',
-    icon: '🖨️',
-    priceLabel: '₪8',
-    price: 8,
+    label: 'הדפסה', icon: '🖨️', priceLabel: '₪8', price: 8,
     fields: ['text'],
     textLabel: 'טקסט להדפסה :',
     textPlaceholder: 'הקלידו את הטקסט הרצוי',
@@ -99,7 +87,6 @@ export default function ProductDetail() {
           .single()
         if (error || !data) { setError('מוצר לא נמצא'); return }
         setProduct(data)
-        // טעינת מוצרים משלימים — בנפרד כדי שלא ישפיע על הצגת המוצר
         if (data.complementary_ids?.length > 0) {
           try {
             const { data: compData } = await supabase
@@ -148,7 +135,6 @@ export default function ProductDetail() {
   const engravingTypes = Array.isArray(product.engraving_type) ? product.engraving_type : product.engraving_type ? [product.engraving_type] : []
   const hasCustomization = product.allows_engraving && engravingTypes.length > 0
 
-  // קרא הגדרות מיתוג מה-admin (localStorage)
   const getEngravingConfig = () => {
     try {
       const saved = JSON.parse(localStorage.getItem('heichal_branding_settings') || '{}')
@@ -166,7 +152,6 @@ export default function ProductDetail() {
 
   const calculateExtraPrice = () => {
     let extra = 0
-    // מחיר התאמה אישית
     engravingTypes.forEach(type => {
       const config = engravingConfig[type]
       const data = customizationData[type] || {}
@@ -174,7 +159,6 @@ export default function ProductDetail() {
         extra += config.price
       }
     })
-    // מחיר ווריאנטים
     Object.values(selectedOptions).forEach(val => {
       if (val?.price_delta) extra += parseFloat(val.price_delta) || 0
     })
@@ -187,12 +171,11 @@ export default function ProductDetail() {
   const productOptions = sizesOption ? [sizesOption] : (product.product_options || [])
 
   const handleAddToCart = () => {
-    // בדוק שנבחר גודל אם יש אפשרויות חובה
     const missingRequired = productOptions.filter(opt => opt.required && !selectedOptions[opt.name])
     if (missingRequired.length > 0) {
       alert(`יש לבחור ${missingRequired.map(o => o.name).join(', ')} לפני ההוספה לסל`)
       return
-  }
+    }
     const customizations = {}
     engravingTypes.forEach(type => {
       const data = customizationData[type] || {}
@@ -212,11 +195,9 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-white" dir="rtl">
       <CartDrawer />
       <Header />
-      
-      {/* pt-24 מבטיח שהתוכן יתחיל מתחת ל-Header ולא יוסתר על ידו */}
+
       <main className="max-w-7xl mx-auto px-4 md:px-8 pt-24 pb-8 md:pt-32 md:pb-12 relative z-10">
-        
-        {/* ניווט Breadcrumbs - בולט ומוסט מהקצה העליון */}
+
         <nav className="flex items-center gap-2 text-sm mb-12 font-sans bg-white py-2">
           <Link to="/" className="text-gray-800 hover:text-black font-medium">דף הבית</Link>
           <span className="text-gray-400">/</span>
@@ -228,9 +209,10 @@ export default function ProductDetail() {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16">
+
           {/* תמונות */}
           <div className="flex flex-col-reverse md:flex-row gap-3">
-             {images.length > 1 && (
+            {images.length > 1 && (
               <div className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible">
                 {images.map((img, i) => (
                   <button key={i} onClick={() => setSelectedImageIndex(i)} className={`w-[72px] h-[72px] flex-shrink-0 border-2 ${selectedImageIndex === i ? 'border-black' : 'border-gray-200'}`}>
@@ -247,26 +229,34 @@ export default function ProductDetail() {
           {/* פרטים */}
           <div className="flex flex-col text-right">
             <h1 className="font-serif text-3xl md:text-4xl mb-3 font-normal" style={{ color: '#C9A84C' }}>{product.name}</h1>
-            
+
             <div className="mb-4 flex items-center gap-3">
               <span className="text-2xl md:text-3xl font-normal">₪{totalPrice.toLocaleString('he-IL')}</span>
             </div>
 
             <div className="mb-5">
               {product.stock_quantity === 0 ? (
-                <span className="text-sm font-bold text-red-600 flex items-center gap-1 justify-start">
+                <span className="text-sm font-bold text-red-600 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/></svg>
                   מלאי אזל
                 </span>
               ) : (
-                <span className="text-sm font-medium text-green-700 flex items-center gap-1 justify-start">
+                <span className="text-sm font-medium text-green-700 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
                   במלאי
                 </span>
               )}
             </div>
 
-            {/* אפשרויות מוצר (ווריאנטים) */}
+            {/* תיאור מוצר - תמיד גלוי */}
+            {product.description && (
+              <div className="mb-5 p-4 bg-gray-50 rounded border border-gray-100">
+                <p className="text-sm font-medium mb-2 text-gray-700">מידע על המוצר</p>
+                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{product.description}</p>
+              </div>
+            )}
+
+            {/* אפשרויות מוצר */}
             {productOptions.length > 0 && (
               <div className="mb-5 space-y-4">
                 {productOptions.map((option, idx) => (
@@ -308,7 +298,7 @@ export default function ProductDetail() {
                   </div>
                   <div className="p-4 space-y-4">
                     {config.fields.includes('checkbox') && (
-                      <label className="flex items-center gap-3 cursor-pointer justify-start">
+                      <label className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={data.checked || false} onChange={e => updateCustomization(type, 'checked', e.target.checked)} className="w-4 h-4 accent-black" />
                         <span className="text-sm">{config.checkboxLabel}</span>
                       </label>
@@ -317,7 +307,7 @@ export default function ProductDetail() {
                       <input type="text" value={data.text || ''} onChange={e => updateCustomization(type, 'text', e.target.value)} placeholder={config.textPlaceholder} className="w-full border p-2 text-right text-sm outline-none rounded-sm" />
                     )}
                     {config.fields.includes('color') && config.colors && (!config.fields.includes('checkbox') || data.checked) && (
-                      <div className="flex flex-wrap gap-2 justify-start">
+                      <div className="flex flex-wrap gap-2">
                         {config.colors.map(color => (
                           <button key={color.value} onClick={() => updateCustomization(type, 'color', color.value)} className={`w-8 h-8 rounded border-2 ${data.color === color.value ? 'border-black' : 'border-gray-300'}`} style={{ backgroundColor: color.hex }} title={color.name} />
                         ))}
@@ -362,20 +352,21 @@ export default function ProductDetail() {
               <span><span className="font-bold">{viewersCount}</span> אנשים צופים במוצר הזה עכשיו !</span>
             </div>
 
-            {/* אקורדיון */}
+            {/* משלוחים - אקורדיון */}
             <div className="border-t border-gray-200">
-              {[
-                { id: 'description', title: 'מידע על המוצר', content: product.description },
-                { id: 'shipping', title: 'משלוחים והחזרות', content: '🚚 משלוח חינם מעל ₪299 | 📦 5-7 ימי עסקים' }
-              ].map(item => (
-                <div key={item.id} className="border-b border-gray-200">
-                  <button onClick={() => setOpenAccordion(openAccordion === item.id ? null : item.id)} className="w-full flex justify-between py-4 text-sm font-medium hover:text-black">
-                    <span>{item.title}</span>
-                    <span className={`transform transition-transform ${openAccordion === item.id ? 'rotate-180' : ''}`}>▼</span>
-                  </button>
-                  {openAccordion === item.id && <div className="pb-4 text-xs text-gray-600 leading-relaxed">{item.content}</div>}
-                </div>
-              ))}
+              <div className="border-b border-gray-200">
+                <button
+                  onClick={() => setOpenAccordion(openAccordion === 'shipping' ? null : 'shipping')}
+                  className="w-full flex justify-between py-4 text-sm font-medium hover:text-black">
+                  <span>משלוחים והחזרות</span>
+                  <span className={`transform transition-transform ${openAccordion === 'shipping' ? 'rotate-180' : ''}`}>▼</span>
+                </button>
+                {openAccordion === 'shipping' && (
+                  <div className="pb-4 text-xs text-gray-600 leading-relaxed">
+                    🚚 משלוח חינם מעל ₪299 | 📦 5-7 ימי עסקים
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
