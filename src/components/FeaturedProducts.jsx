@@ -19,7 +19,7 @@ export default function FeaturedProducts() {
           .eq('is_featured', true)
           .eq('is_active', true)
           .order('display_order')
-          .limit(4)
+          .limit(12)
 
         if (error) throw error
         setProducts(data || [])
@@ -55,17 +55,6 @@ export default function FeaturedProducts() {
             <ProductCard product={product} />
           </div>
         ))}
-      </div>
-
-      {/* כפתור לעוד מוצרים */}
-      <div className="text-center mt-8 md:mt-12">
-        <Link
-          to="/products"
-          className="inline-flex items-center gap-2 text-[#2D2420] border-b border-[#D4AF37] pb-1 hover:text-[#D4AF37] transition-all"
-          style={{ fontFamily: "'Shofar', serif", fontSize: '1.1rem' }}
-        >
-          <span>לעוד מוצרים</span>
-        </Link>
       </div>
     </section>
   )
