@@ -8,7 +8,6 @@ export default async function handler(req, res) {
     const KEY = process.env.HYP_API_KEY.trim();
     const PASSP = process.env.HYP_PASSP.trim();
 
-    // שלב 1 - קבלת signature
     const apiSignParams = new URLSearchParams({
       action: 'APISign',
       What: 'SIGN',
@@ -27,9 +26,7 @@ export default async function handler(req, res) {
       Sign: 'True',
     });
 
-    const signResponse = await fetch(
-      `https://icom.yaad.net/p/?${apiSignParams.toString()}`
-    );
+    const signResponse = await fetch(`https://icom.yaad.net/p/?${apiSignParams.toString()}`);
     const signText = await signResponse.text();
     console.log('Step 1 response:', signText);
 
@@ -40,22 +37,27 @@ export default async function handler(req, res) {
       throw new Error('לא התקבל signature: ' + signText.substring(0, 200));
     }
 
-        // שלב 2 - בניית URL לדף תשלום עם אותם פרמטרים בדיוק
     const paymentParams = new URLSearchParams({
-    action: 'pay',
-    Masof: MASOF,
-    Order: String(orderId),
-    Amount: String(Math.round(Number(amount) * 100)),
-    Info: customerName || 'הזמנה',
-    email: customerEmail || '',
-    SuccessUrl: 'https://www.hahiechal.co.il/success',
-    CancelUrl: 'https://www.hahiechal.co.il/checkout',
-    PageLang: 'HEB',
-    UTF8: 'True',
-    UTF8out: 'True',
-    Sign: 'True',
-    signature: signature,
+      action: 'pay',
+      Masof: MASOF,
+      Order: String(orderId),
+      Amount: String(Math.round(Number(amount) * 100)),
+      Info: customerName || 'הזמנה',
+      email: customerEmail || '',
+      SuccessUrl: 'https://www.hahiechal.co.il/success',
+      CancelUrl: 'https://www.hahiechal.co.il/checkout',
+      PageLang: 'HEB',
+      UTF8: 'True',
+      UTF8out: 'True',
+      Sign: 'True',
+      signature: signature,
     });
 
     const paymentUrl = `https://icom.yaad.net/p/?${paymentParams.toString()}`;
-    return res.status(200).json({ url: paymentUrl });   
+    return res.status(200).json({ url: paymentUrl });
+
+  } catch (error) {
+    console.error('API Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
