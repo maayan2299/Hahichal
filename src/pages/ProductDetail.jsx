@@ -70,6 +70,7 @@ export default function ProductDetail() {
   const [customizationData, setCustomizationData] = useState({})
   const [selectedOptions, setSelectedOptions] = useState({})
   const [complementaryProducts, setComplementaryProducts] = useState([])
+  const [openDesc, setOpenDesc] = useState(false)
 
   useEffect(() => {
     async function fetchProduct() {
@@ -221,8 +222,8 @@ export default function ProductDetail() {
                 ))}
               </div>
             )}
-            <div className="flex-1 aspect-square bg-gray-50 border border-gray-100 overflow-hidden">
-              <img src={mainImage} alt={product.name} className="w-full h-full object-contain" />
+            <div className="flex-1 bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center" style={{height: '500px'}}>
+              <img src={mainImage} alt={product.name} className="w-full h-full object-contain p-4" />
             </div>
           </div>
 
@@ -252,7 +253,14 @@ export default function ProductDetail() {
             {product.description && (
               <div className="mb-5 p-4 bg-gray-50 rounded border border-gray-100">
                 <p className="text-sm font-medium mb-2 text-gray-700">מידע על המוצר</p>
-                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{product.description}</p>
+                <p className={`text-sm text-gray-600 leading-relaxed whitespace-pre-line ${!openDesc ? 'line-clamp-3' : ''}`}>
+                  {product.description}
+                </p>
+                {product.description?.length > 150 && (
+                  <button onClick={() => setOpenDesc(!openDesc)} className="text-xs text-[#C9A84C] mt-1 hover:underline">
+                    {openDesc ? 'סגור' : 'קרא עוד'}
+                  </button>
+                )}
               </div>
             )}
 
