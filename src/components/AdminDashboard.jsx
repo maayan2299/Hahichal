@@ -153,7 +153,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
   const [brandingSettings, setBrandingSettings] = useState(() => {
     try { return JSON.parse(localStorage.getItem('heichal_branding_settings')) || DEFAULT_BRANDING; } catch { return DEFAULT_BRANDING; }
   });
-  const [whatsappNumber, setWhatsappNumber] = useState(() => localStorage.getItem('heichal_whatsapp') || '972501234567');
+  const [whatsappNumber, setWhatsappNumber] = useState(() => localStorage.getItem('heichal_whatsapp') || '972542115584');
   const [instagramName, setInstagramName] = useState(() => localStorage.getItem('heichal_instagram') || '');
 
   const [productImages, setProductImages] = useState([]);
@@ -1281,7 +1281,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: BK }}>מספר וואטסאפ</label>
-                  <input value={whatsappNumber} onChange={e => setWhatsappNumber(e.target.value)} style={inp} placeholder="972501234567" />
+                  <input value={whatsappNumber} onChange={e => setWhatsappNumber(e.target.value)} style={inp} placeholder="972542115584" />
                   <div style={{ fontSize: '11px', color: '#bbb', marginTop: '4px' }}>ללא + ומקפים — מספר זה ישמש לכפתור הוואטסאפ הצף</div>
                 </div>
                 <div>

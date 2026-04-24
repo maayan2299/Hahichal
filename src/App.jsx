@@ -16,7 +16,7 @@ import AdminDashboard from './components/AdminDashboard'
 
 // כפתור ווטסאפ קבוע
 function WhatsAppButton() {
-  const phone = localStorage.getItem('heichal_whatsapp') || '972501234567'
+  const phone = localStorage.getItem('heichal_whatsapp') || '972542115584'
   return (
     <a
       href={`https://wa.me/${phone}`}
