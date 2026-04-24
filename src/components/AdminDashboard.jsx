@@ -1542,7 +1542,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                 <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', marginBottom: productForm.has_sizes ? '12px' : '0' }}>
                     <input type="checkbox" checked={productForm.has_sizes || false} onChange={e => setProductForm({...productForm, has_sizes: e.target.checked, sizes: e.target.checked ? (productForm.sizes?.length > 0 ? productForm.sizes : [{ label: '', price_delta: 0 }]) : []})} style={{ width: 'auto', accentColor: G }} />
-                    <span style={{ fontSize: '13px', fontWeight: '600' }}>📐 יש גדלים / מידות</span>
+                    <span style={{ fontSize: '13px', fontWeight: '600' }}>📐 גדלים / מידות / כמות / אפשרויות</span>
                   </label>
                   {productForm.has_sizes && (
                     <div>
@@ -1554,7 +1554,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                               const sizes = [...productForm.sizes];
                               sizes[idx] = { ...sizes[idx], label: e.target.value };
                               setProductForm({...productForm, sizes});
-                            }} placeholder={`גודל ${idx + 1}, למשל: S / קטן / 10 ס"מ`} style={{ ...inp, flex: 2, padding: '8px 10px', fontSize: '13px' }} />
+                            }} placeholder={`למשל: כסף / לאורך / 10 יחידות / S`} style={{ ...inp, flex: 2, padding: '8px 10px', fontSize: '13px' }} />
                             <input type="number" value={s.price_delta || ''} onChange={e => {
                               const sizes = [...productForm.sizes];
                               sizes[idx] = { ...sizes[idx], price_delta: parseFloat(e.target.value) || 0 };
