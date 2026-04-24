@@ -234,10 +234,11 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       dimensions: productForm.dimensions || null,
       material: productForm.material || null,
       complementary_ids: productForm.complementary_ids?.length > 0 ? productForm.complementary_ids : null,
-      product_options: sizesOption
+      product_options: productOptions.length > 0 ? productOptions : null
     };
     try {
-      let productId;
+      let productId;const sizesOption = productForm.has_sizes && productForm.sizes?.filter(s => s.label).length > 0
+
       if (editingProduct) {
         await supabase.from('products').update(data).eq('id', editingProduct.id);
         productId = editingProduct.id;
@@ -1538,48 +1539,104 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                   )}
                 </div>
 
-                {/* גדלים */}
+                {/* אפשרויות מוצר */}
                 <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', marginBottom: productForm.has_sizes ? '12px' : '0' }}>
-                    <input type="checkbox" checked={productForm.has_sizes || false} onChange={e => setProductForm({...productForm, has_sizes: e.target.checked, sizes: e.target.checked ? (productForm.sizes?.length > 0 ? productForm.sizes : [{ label: '', price_delta: 0 }]) : []})} style={{ width: 'auto', accentColor: G }} />
-                    <span style={{ fontSize: '13px', fontWeight: '600' }}>📐 גדלים / מידות / כמות / אפשרויות</span>
-                  </label>
-                  {productForm.has_sizes && (
-                    <div>
-                      <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px' }}>הוסף כל גודל בשדה נפרד. ניתן להוסיף הפרש מחיר לכל גודל (אופציונלי)</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: BK }}>📋 אפשרויות מוצר</span>
+                    <button type="button" onClick={() => setProductForm({...productForm, product_options: [...(productForm.product_options || []), { name: '', required: true, values: [{ label: '', price_delta: 0 }] }]})}
+                      style={btn(BK, WH, { padding: '6px 12px', fontSize: '12px' })}>
+                      <Plus size={11}/> הוסף אפשרות
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px' }}>
+                    לדוגמה: "ספייסרים", "התקנה", "כיוון", "כמות"
+                  </div>
+
+                  {(productForm.product_options || []).map((option, optIdx) => (
+                    <div key={optIdx} style={{ background: WH, borderRadius: '8px', border: `1px solid ${BR}`, padding: '12px', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
+                        <input
+                          value={option.name}
+                          onChange={e => {
+                            const opts = [...productForm.product_options];
+                            opts[optIdx] = { ...opts[optIdx], name: e.target.value };
+                            setProductForm({...productForm, product_options: opts});
+                          }}
+                          placeholder="שם האפשרות, למשל: ספייסרים"
+                          style={{ ...inp, flex: 1, padding: '8px 10px', fontSize: '13px' }}
+                        />
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          <input type="checkbox" checked={option.required || false}
+                            onChange={e => {
+                              const opts = [...productForm.product_options];
+                              opts[optIdx] = { ...opts[optIdx], required: e.target.checked };
+                              setProductForm({...productForm, product_options: opts});
+                            }}
+                            style={{ width: 'auto', accentColor: G }} />
+                          חובה
+                        </label>
+                        <button type="button" onClick={() => setProductForm({...productForm, product_options: productForm.product_options.filter((_, i) => i !== optIdx)})}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626' }}>
+                          <X size={16}/>
+                        </button>
+                      </div>
+
                       <div style={{ display: 'grid', gap: '6px', marginBottom: '8px' }}>
-                        {(productForm.sizes || []).map((s, idx) => (
-                          <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                            <input value={s.label} onChange={e => {
-                              const sizes = [...productForm.sizes];
-                              sizes[idx] = { ...sizes[idx], label: e.target.value };
-                              setProductForm({...productForm, sizes});
-                            }} placeholder={`למשל: כסף / לאורך / 10 יחידות / S`} style={{ ...inp, flex: 2, padding: '8px 10px', fontSize: '13px' }} />
-                            <input type="number" value={s.price_delta || ''} onChange={e => {
-                              const sizes = [...productForm.sizes];
-                              sizes[idx] = { ...sizes[idx], price_delta: parseFloat(e.target.value) || 0 };
-                              setProductForm({...productForm, sizes});
-                            }} placeholder="+ ₪" style={{ ...inp, width: '80px', padding: '8px 10px', fontSize: '13px' }} />
+                        {(option.values || []).map((val, valIdx) => (
+                          <div key={valIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <input
+                              value={val.label}
+                              onChange={e => {
+                                const opts = [...productForm.product_options];
+                                opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], label: e.target.value };
+                                setProductForm({...productForm, product_options: opts});
+                              }}
+                              placeholder="למשל: כסף / עם התקנה / לאורך"
+                              style={{ ...inp, flex: 2, padding: '8px 10px', fontSize: '13px' }}
+                            />
+                            <input
+                              type="number" min="0" step="0.01"
+                              value={val.price_delta || ''}
+                              onChange={e => {
+                                const opts = [...productForm.product_options];
+                                opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], price_delta: parseFloat(e.target.value) || 0 };
+                                setProductForm({...productForm, product_options: opts});
+                              }}
+                              placeholder="תוספת ₪"
+                              style={{ ...inp, width: '90px', padding: '8px 10px', fontSize: '13px' }}
+                            />
                             <button type="button" onClick={() => {
-                              const sizes = productForm.sizes.filter((_, i) => i !== idx);
-                              setProductForm({...productForm, sizes, has_sizes: sizes.length > 0});
-                            }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb' }}><X size={14}/></button>
+                              const opts = [...productForm.product_options];
+                              opts[optIdx].values = opts[optIdx].values.filter((_, i) => i !== valIdx);
+                              setProductForm({...productForm, product_options: opts});
+                            }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb' }}>
+                              <X size={14}/>
+                            </button>
                           </div>
                         ))}
                       </div>
-                      <button type="button" onClick={() => setProductForm({...productForm, sizes: [...(productForm.sizes || []), { label: '', price_delta: 0 }]})}
-                        style={{ ...btn(BK, WH, { padding: '6px 12px', fontSize: '12px' }) }}><Plus size={11}/> הוסף גודל</button>
-                      {(productForm.sizes || []).filter(s => s.label).length > 0 && (
+
+                      <button type="button" onClick={() => {
+                        const opts = [...productForm.product_options];
+                        opts[optIdx].values = [...(opts[optIdx].values || []), { label: '', price_delta: 0 }];
+                        setProductForm({...productForm, product_options: opts});
+                      }}
+                        style={{ ...btn(BG, BK, { padding: '5px 10px', fontSize: '11px', border: `1px solid ${BR}` }) }}>
+                        <Plus size={10}/> הוסף ערך
+                      </button>
+
+                      {(option.values || []).filter(v => v.label).length > 0 && (
                         <div style={{ marginTop: '8px', display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                          {productForm.sizes.filter(s => s.label).map((s, i) => (
+                          {option.values.filter(v => v.label).map((v, i) => (
                             <span key={i} style={{ background: BK, color: WH, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' }}>
-                              {s.label}{s.price_delta > 0 ? ` +₪${s.price_delta}` : ''}
+                              {v.label}{v.price_delta > 0 ? ` +₪${v.price_delta}` : ''}
                             </span>
                           ))}
                         </div>
                       )}
                     </div>
-                  )}
+                  ))}
                 </div>
 
                 {/* מוצרים משלימים */}
