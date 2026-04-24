@@ -447,7 +447,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
   };
 
   // ── SETTINGS ──
-  const saveStoreSettings = () => {
+  const saveStoreSettings = async () => {
     localStorage.setItem('heichal_shipping_settings', JSON.stringify(shippingSettings));
     await supabase.from('store_settings').upsert({ key: 'branding', value: brandingSettings });
     localStorage.setItem('heichal_whatsapp', whatsappNumber);
