@@ -71,6 +71,7 @@ export default function ProductDetail() {
   const [selectedOptions, setSelectedOptions] = useState({})
   const [complementaryProducts, setComplementaryProducts] = useState([])
   const [openDesc, setOpenDesc] = useState(false)
+  const [brandingSettings, setBrandingSettings] = useState(null)
 
   useEffect(() => {
     async function fetchProduct() {
@@ -107,6 +108,18 @@ export default function ProductDetail() {
     if (id) fetchProduct()
   }, [id])
 
+  useEffect(() => {
+    async function fetchBranding() {
+      const { data } = await supabase
+        .from('store_settings')
+        .select('*')
+        .eq('key', 'branding')
+        .maybeSingle()
+      if (data?.value) setBrandingSettings(data.value)
+    }
+    fetchBranding()
+  }, [])
+
   if (loading) return (
     <div className="min-h-screen bg-white" dir="rtl">
       <Header />
@@ -138,11 +151,14 @@ export default function ProductDetail() {
 
   const getEngravingConfig = () => {
     try {
-      const saved = JSON.parse(localStorage.getItem('heichal_branding_settings') || '{}')
       const config = JSON.parse(JSON.stringify(ENGRAVING_CONFIG))
+      const saved = brandingSettings || {}
       Object.entries(saved).forEach(([type, s]) => {
         if (config[type]) {
-          if (s.price !== undefined) { config[type].price = s.price; config[type].priceLabel = `₪${s.price}` }
+          if (s.price !== undefined) {
+            config[type].price = s.price
+            config[type].priceLabel = `₪${s.price}`
+          }
           if (s.text_limit !== undefined) config[type].text_limit = s.text_limit
         }
       })
@@ -248,7 +264,7 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* תיאור מוצר - תמיד גלוי */}
+            {/* תיאור מוצר */}
             {product.description && (
               <div className="mb-5 p-4 bg-gray-50 rounded border border-gray-100">
                 <p className="text-sm font-medium mb-2 text-gray-700">מידע על המוצר</p>
@@ -326,7 +342,7 @@ export default function ProductDetail() {
             {/* התאמה אישית */}
             {hasCustomization && engravingTypes.map(type => {
               const config = engravingConfig[type]
-                if (!config) return null
+              if (!config) return null
               const data = customizationData[type] || {}
               return (
                 <div key={type} className="border border-gray-200 rounded-lg mb-4 overflow-hidden shadow-sm">
@@ -390,7 +406,7 @@ export default function ProductDetail() {
               <span><span className="font-bold">{viewersCount}</span> אנשים צופים במוצר הזה עכשיו !</span>
             </div>
 
-            {/* משלוחים - אקורדיון */}
+            {/* משלוחים */}
             <div className="border-t border-gray-200">
               <div className="border-b border-gray-200">
                 <button
