@@ -1647,7 +1647,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                           const opts = (productForm.product_options || []).filter(o => o.name !== 'התקנה');
                           if (e.target.checked) opts.push({ name: 'התקנה', required: true, values: [
                             { label: 'ללא התקנה', price_delta: 0 },
-                            { label: 'עם התקנה', price_delta: 0 }
+                            { label: 'עם התקנה', price_delta: 50 }
                           ]});
                           setProductForm({...productForm, product_options: opts});
                         }}
@@ -1656,26 +1656,26 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                     </label>
                     {(productForm.product_options || []).some(o => o.name === 'התקנה') && (
                       <div style={{ padding: '10px 12px', borderTop: `1px solid ${BR}`, background: BG }}>
-                        {((productForm.product_options || []).find(o => o.name === 'התקנה')?.values || []).map((val, valIdx) => {
-                          const optIdx = (productForm.product_options || []).findIndex(o => o.name === 'התקנה');
-                          return (
-                            <div key={valIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px' }}>
-                              <input value={val.label} onChange={e => {
-                                const opts = [...productForm.product_options];
-                                opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], label: e.target.value };
-                                setProductForm({...productForm, product_options: opts});
-                              }} placeholder='למשל: ללא התקנה' style={{ ...inp, flex: 2, padding: '7px 10px', fontSize: '13px' }} />
-                              <input type="number" min="0" value={val.price_delta || ''} onChange={e => {
-                                const opts = [...productForm.product_options];
-                                opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], price_delta: parseFloat(e.target.value) || 0 };
-                                setProductForm({...productForm, product_options: opts});
-                              }} placeholder="תוספת ₪" style={{ ...inp, width: '90px', padding: '7px 10px', fontSize: '13px' }} />
-                            </div>
-                          );
-                        })}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <label style={{ fontSize: '13px', fontWeight: '600' }}>מחיר התקנה (₪):</label>
+                          <input type="number" min="0"
+                            value={(productForm.product_options || []).find(o => o.name === 'התקנה')?.values?.find(v => v.label === 'עם התקנה')?.price_delta || ''}
+                            onChange={e => {
+                              const opts = [...productForm.product_options];
+                              const optIdx = opts.findIndex(o => o.name === 'התקנה');
+                              const price = parseFloat(e.target.value) || 0;
+                              opts[optIdx].values = [
+                                { label: 'ללא התקנה', price_delta: 0 },
+                                { label: 'עם התקנה', price_delta: price }
+                              ];
+                              setProductForm({...productForm, product_options: opts});
+                            }}
+                            placeholder="למשל: 50"
+                            style={{ ...inp, width: '100px', padding: '7px 10px', fontSize: '13px' }}
+                          />
+                        </div>
                       </div>
                     )}
-                  </div>
 
                   {/* כיוון */}
                   <div style={{ border: `1px solid ${BR}`, borderRadius: '8px', overflow: 'hidden' }}>
@@ -1715,6 +1715,8 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                     )}
                   </div>
                 </div>  
+                </div>
+
 
                 {/* מוצרים משלימים */}
                 <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
