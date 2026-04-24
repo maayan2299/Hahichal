@@ -234,11 +234,10 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       dimensions: productForm.dimensions || null,
       material: productForm.material || null,
       complementary_ids: productForm.complementary_ids?.length > 0 ? productForm.complementary_ids : null,
-      product_options: productOptions.length > 0 ? productOptions : null
+      product_options: sizesOption
     };
     try {
-      let productId;const sizesOption = productForm.has_sizes && productForm.sizes?.filter(s => s.label).length > 0
-
+      let productId;
       if (editingProduct) {
         await supabase.from('products').update(data).eq('id', editingProduct.id);
         productId = editingProduct.id;
@@ -1539,105 +1538,183 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                   )}
                 </div>
 
+
                 {/* אפשרויות מוצר */}
                 <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '700', color: BK }}>📋 אפשרויות מוצר</span>
-                    <button type="button" onClick={() => setProductForm({...productForm, product_options: [...(productForm.product_options || []), { name: '', required: true, values: [{ label: '', price_delta: 0 }] }]})}
-                      style={btn(BK, WH, { padding: '6px 12px', fontSize: '12px' })}>
-                      <Plus size={11}/> הוסף אפשרות
-                    </button>
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px' }}>
-                    לדוגמה: "ספייסרים", "התקנה", "כיוון", "כמות"
-                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: BK, marginBottom: '12px' }}>📋 אפשרויות מוצר</div>
 
-                  {(productForm.product_options || []).map((option, optIdx) => (
-                    <div key={optIdx} style={{ background: WH, borderRadius: '8px', border: `1px solid ${BR}`, padding: '12px', marginBottom: '10px' }}>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
-                        <input
-                          value={option.name}
-                          onChange={e => {
-                            const opts = [...productForm.product_options];
-                            opts[optIdx] = { ...opts[optIdx], name: e.target.value };
-                            setProductForm({...productForm, product_options: opts});
-                          }}
-                          placeholder="שם האפשרות, למשל: ספייסרים"
-                          style={{ ...inp, flex: 1, padding: '8px 10px', fontSize: '13px' }}
-                        />
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          <input type="checkbox" checked={option.required || false}
-                            onChange={e => {
-                              const opts = [...productForm.product_options];
-                              opts[optIdx] = { ...opts[optIdx], required: e.target.checked };
-                              setProductForm({...productForm, product_options: opts});
-                            }}
-                            style={{ width: 'auto', accentColor: G }} />
-                          חובה
-                        </label>
-                        <button type="button" onClick={() => setProductForm({...productForm, product_options: productForm.product_options.filter((_, i) => i !== optIdx)})}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626' }}>
-                          <X size={16}/>
-                        </button>
-                      </div>
-
-                      <div style={{ display: 'grid', gap: '6px', marginBottom: '8px' }}>
-                        {(option.values || []).map((val, valIdx) => (
-                          <div key={valIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                            <input
-                              value={val.label}
-                              onChange={e => {
+                  {/* גדלים */}
+                  <div style={{ marginBottom: '10px', border: `1px solid ${BR}`, borderRadius: '8px', overflow: 'hidden' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: WH, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={(productForm.product_options || []).some(o => o.name === 'גודל')}
+                        onChange={e => {
+                          const opts = (productForm.product_options || []).filter(o => o.name !== 'גודל');
+                          if (e.target.checked) opts.push({ name: 'גודל', required: true, values: [{ label: '', price_delta: 0 }] });
+                          setProductForm({...productForm, product_options: opts});
+                        }}
+                        style={{ width: 'auto', accentColor: G }} />
+                      <span style={{ fontSize: '13px', fontWeight: '600' }}>📐 גדלים / מידות</span>
+                    </label>
+                    {(productForm.product_options || []).some(o => o.name === 'גודל') && (
+                      <div style={{ padding: '10px 12px', borderTop: `1px solid ${BR}`, background: BG }}>
+                        {((productForm.product_options || []).find(o => o.name === 'גודל')?.values || []).map((val, valIdx) => {
+                          const optIdx = (productForm.product_options || []).findIndex(o => o.name === 'גודל');
+                          return (
+                            <div key={valIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px' }}>
+                              <input value={val.label} onChange={e => {
                                 const opts = [...productForm.product_options];
                                 opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], label: e.target.value };
                                 setProductForm({...productForm, product_options: opts});
-                              }}
-                              placeholder="למשל: כסף / עם התקנה / לאורך"
-                              style={{ ...inp, flex: 2, padding: '8px 10px', fontSize: '13px' }}
-                            />
-                            <input
-                              type="number" min="0" step="0.01"
-                              value={val.price_delta || ''}
-                              onChange={e => {
+                              }} placeholder='למשל: קטן / 20X30' style={{ ...inp, flex: 2, padding: '7px 10px', fontSize: '13px' }} />
+                              <input type="number" min="0" value={val.price_delta || ''} onChange={e => {
                                 const opts = [...productForm.product_options];
                                 opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], price_delta: parseFloat(e.target.value) || 0 };
                                 setProductForm({...productForm, product_options: opts});
-                              }}
-                              placeholder="תוספת ₪"
-                              style={{ ...inp, width: '90px', padding: '8px 10px', fontSize: '13px' }}
-                            />
-                            <button type="button" onClick={() => {
-                              const opts = [...productForm.product_options];
-                              opts[optIdx].values = opts[optIdx].values.filter((_, i) => i !== valIdx);
-                              setProductForm({...productForm, product_options: opts});
-                            }}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb' }}>
-                              <X size={14}/>
-                            </button>
-                          </div>
-                        ))}
+                              }} placeholder="תוספת ₪" style={{ ...inp, width: '90px', padding: '7px 10px', fontSize: '13px' }} />
+                              <button type="button" onClick={() => {
+                                const opts = [...productForm.product_options];
+                                opts[optIdx].values = opts[optIdx].values.filter((_, i) => i !== valIdx);
+                                setProductForm({...productForm, product_options: opts});
+                              }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb' }}><X size={14}/></button>
+                            </div>
+                          );
+                        })}
+                        <button type="button" onClick={() => {
+                          const opts = [...productForm.product_options];
+                          const optIdx = opts.findIndex(o => o.name === 'גודל');
+                          opts[optIdx].values = [...(opts[optIdx].values || []), { label: '', price_delta: 0 }];
+                          setProductForm({...productForm, product_options: opts});
+                        }} style={{ ...btn(BK, WH, { padding: '5px 10px', fontSize: '11px' }) }}><Plus size={10}/> הוסף גודל</button>
                       </div>
+                    )}
+                  </div>
 
-                      <button type="button" onClick={() => {
-                        const opts = [...productForm.product_options];
-                        opts[optIdx].values = [...(opts[optIdx].values || []), { label: '', price_delta: 0 }];
-                        setProductForm({...productForm, product_options: opts});
-                      }}
-                        style={{ ...btn(BG, BK, { padding: '5px 10px', fontSize: '11px', border: `1px solid ${BR}` }) }}>
-                        <Plus size={10}/> הוסף ערך
-                      </button>
+                  {/* ספייסרים */}
+                  <div style={{ marginBottom: '10px', border: `1px solid ${BR}`, borderRadius: '8px', overflow: 'hidden' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: WH, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={(productForm.product_options || []).some(o => o.name === 'ספייסרים')}
+                        onChange={e => {
+                          const opts = (productForm.product_options || []).filter(o => o.name !== 'ספייסרים');
+                          if (e.target.checked) opts.push({ name: 'ספייסרים', required: true, values: [
+                            { label: 'כסף', price_delta: 2 },
+                            { label: 'זהב', price_delta: 3 },
+                            { label: 'שחור', price_delta: 3 }
+                          ]});
+                          setProductForm({...productForm, product_options: opts});
+                        }}
+                        style={{ width: 'auto', accentColor: G }} />
+                      <span style={{ fontSize: '13px', fontWeight: '600' }}>🔩 ספייסרים</span>
+                    </label>
+                    {(productForm.product_options || []).some(o => o.name === 'ספייסרים') && (
+                      <div style={{ padding: '10px 12px', borderTop: `1px solid ${BR}`, background: BG }}>
+                        {((productForm.product_options || []).find(o => o.name === 'ספייסרים')?.values || []).map((val, valIdx) => {
+                          const optIdx = (productForm.product_options || []).findIndex(o => o.name === 'ספייסרים');
+                          return (
+                            <div key={valIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px' }}>
+                              <input value={val.label} onChange={e => {
+                                const opts = [...productForm.product_options];
+                                opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], label: e.target.value };
+                                setProductForm({...productForm, product_options: opts});
+                              }} placeholder='צבע ספייסר' style={{ ...inp, flex: 2, padding: '7px 10px', fontSize: '13px' }} />
+                              <input type="number" min="0" value={val.price_delta || ''} onChange={e => {
+                                const opts = [...productForm.product_options];
+                                opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], price_delta: parseFloat(e.target.value) || 0 };
+                                setProductForm({...productForm, product_options: opts});
+                              }} placeholder="תוספת ₪" style={{ ...inp, width: '90px', padding: '7px 10px', fontSize: '13px' }} />
+                              <button type="button" onClick={() => {
+                                const opts = [...productForm.product_options];
+                                opts[optIdx].values = opts[optIdx].values.filter((_, i) => i !== valIdx);
+                                setProductForm({...productForm, product_options: opts});
+                              }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb' }}><X size={14}/></button>
+                            </div>
+                          );
+                        })}
+                        <button type="button" onClick={() => {
+                          const opts = [...productForm.product_options];
+                          const optIdx = opts.findIndex(o => o.name === 'ספייסרים');
+                          opts[optIdx].values = [...(opts[optIdx].values || []), { label: '', price_delta: 0 }];
+                          setProductForm({...productForm, product_options: opts});
+                        }} style={{ ...btn(BK, WH, { padding: '5px 10px', fontSize: '11px' }) }}><Plus size={10}/> הוסף צבע</button>
+                      </div>
+                    )}
+                  </div>
 
-                      {(option.values || []).filter(v => v.label).length > 0 && (
-                        <div style={{ marginTop: '8px', display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                          {option.values.filter(v => v.label).map((v, i) => (
-                            <span key={i} style={{ background: BK, color: WH, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' }}>
-                              {v.label}{v.price_delta > 0 ? ` +₪${v.price_delta}` : ''}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                  {/* התקנה */}
+                  <div style={{ marginBottom: '10px', border: `1px solid ${BR}`, borderRadius: '8px', overflow: 'hidden' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: WH, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={(productForm.product_options || []).some(o => o.name === 'התקנה')}
+                        onChange={e => {
+                          const opts = (productForm.product_options || []).filter(o => o.name !== 'התקנה');
+                          if (e.target.checked) opts.push({ name: 'התקנה', required: true, values: [
+                            { label: 'ללא התקנה', price_delta: 0 },
+                            { label: 'עם התקנה', price_delta: 0 }
+                          ]});
+                          setProductForm({...productForm, product_options: opts});
+                        }}
+                        style={{ width: 'auto', accentColor: G }} />
+                      <span style={{ fontSize: '13px', fontWeight: '600' }}>🔧 התקנה</span>
+                    </label>
+                    {(productForm.product_options || []).some(o => o.name === 'התקנה') && (
+                      <div style={{ padding: '10px 12px', borderTop: `1px solid ${BR}`, background: BG }}>
+                        {((productForm.product_options || []).find(o => o.name === 'התקנה')?.values || []).map((val, valIdx) => {
+                          const optIdx = (productForm.product_options || []).findIndex(o => o.name === 'התקנה');
+                          return (
+                            <div key={valIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px' }}>
+                              <input value={val.label} onChange={e => {
+                                const opts = [...productForm.product_options];
+                                opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], label: e.target.value };
+                                setProductForm({...productForm, product_options: opts});
+                              }} placeholder='למשל: ללא התקנה' style={{ ...inp, flex: 2, padding: '7px 10px', fontSize: '13px' }} />
+                              <input type="number" min="0" value={val.price_delta || ''} onChange={e => {
+                                const opts = [...productForm.product_options];
+                                opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], price_delta: parseFloat(e.target.value) || 0 };
+                                setProductForm({...productForm, product_options: opts});
+                              }} placeholder="תוספת ₪" style={{ ...inp, width: '90px', padding: '7px 10px', fontSize: '13px' }} />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* כיוון */}
+                  <div style={{ border: `1px solid ${BR}`, borderRadius: '8px', overflow: 'hidden' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: WH, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={(productForm.product_options || []).some(o => o.name === 'כיוון')}
+                        onChange={e => {
+                          const opts = (productForm.product_options || []).filter(o => o.name !== 'כיוון');
+                          if (e.target.checked) opts.push({ name: 'כיוון', required: true, values: [
+                            { label: 'לאורך', price_delta: 0 },
+                            { label: 'לרוחב', price_delta: 0 }
+                          ]});
+                          setProductForm({...productForm, product_options: opts});
+                        }}
+                        style={{ width: 'auto', accentColor: G }} />
+                      <span style={{ fontSize: '13px', fontWeight: '600' }}>↕️ כיוון (לאורך / לרוחב)</span>
+                    </label>
+                    {(productForm.product_options || []).some(o => o.name === 'כיוון') && (
+                      <div style={{ padding: '10px 12px', borderTop: `1px solid ${BR}`, background: BG }}>
+                        {((productForm.product_options || []).find(o => o.name === 'כיוון')?.values || []).map((val, valIdx) => {
+                          const optIdx = (productForm.product_options || []).findIndex(o => o.name === 'כיוון');
+                          return (
+                            <div key={valIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px' }}>
+                              <input value={val.label} onChange={e => {
+                                const opts = [...productForm.product_options];
+                                opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], label: e.target.value };
+                                setProductForm({...productForm, product_options: opts});
+                              }} placeholder='לאורך / לרוחב' style={{ ...inp, flex: 2, padding: '7px 10px', fontSize: '13px' }} />
+                              <input type="number" min="0" value={val.price_delta || ''} onChange={e => {
+                                const opts = [...productForm.product_options];
+                                opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], price_delta: parseFloat(e.target.value) || 0 };
+                                setProductForm({...productForm, product_options: opts});
+                              }} placeholder="תוספת ₪" style={{ ...inp, width: '90px', padding: '7px 10px', fontSize: '13px' }} />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>  
 
                 {/* מוצרים משלימים */}
                 <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
