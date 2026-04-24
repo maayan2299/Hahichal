@@ -168,8 +168,7 @@ export default function ProductDetail() {
 
   const displayPrice = product.on_sale && product.sale_price ? parseFloat(product.sale_price) : parseFloat(product.price)
   const totalPrice = displayPrice + calculateExtraPrice()
-  const sizesOption = product.product_options?.find(o => o.type === 'sizes')
-  const productOptions = sizesOption ? [sizesOption] : (product.product_options || [])
+  const productOptions = product.product_options || []
 
   const handleAddToCart = () => {
     const missingRequired = productOptions.filter(opt => opt.required && !selectedOptions[opt.name])

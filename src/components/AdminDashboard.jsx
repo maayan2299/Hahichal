@@ -169,14 +169,14 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
 
   const loadAll = async () => {
     setLoading(true);
-    // כל שאילתה עצמאית — אם אחת נכשלת, האחרות ממשיכות
-    const [pRes, cRes, rRes, cpRes, ppRes, oRes] = await Promise.all([
+    const [pRes, cRes, rRes, cpRes, ppRes, oRes, sRes] = await Promise.all([
       supabase.from('products').select(`*, categories!products_category_id_fkey(name), product_images(image_url, is_primary), product_colors(id)`).order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('display_order'),
       supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
       supabase.from('coupons').select('*').order('created_at', { ascending: false }),
       supabase.from('popup_settings').select('*').limit(1).maybeSingle(),
-      supabase.from('orders').select('*').order('created_at', { ascending: false })
+      supabase.from('orders').select('*').order('created_at', { ascending: false }),
+      supabase.from('store_settings').select('*').eq('key', 'branding').maybeSingle()
     ]);
     if (pRes.data) setProducts(pRes.data.map(p => ({
       ...p,
@@ -188,11 +188,10 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     if (cRes.data) setCategories(cRes.data);
     if (rRes.data) setReviews(rRes.data);
     if (cpRes.data) setCoupons(cpRes.data);
-    // ppRes.data יכול להיות null אם הטבלה ריקה — זה בסדר, נשמור ברירת מחדל
     if (oRes?.data) setOrders(oRes.data);
+    if (sRes?.data?.value) setBrandingSettings(sRes.data.value);
     setLoading(false);
   };
-
   const upload = async (file, bucket = 'product-images', fileName = null) => {
     if (!file) return null;
     setUploading(true);
@@ -450,7 +449,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
   // ── SETTINGS ──
   const saveStoreSettings = () => {
     localStorage.setItem('heichal_shipping_settings', JSON.stringify(shippingSettings));
-    localStorage.setItem('heichal_branding_settings', JSON.stringify(brandingSettings));
+    await supabase.from('store_settings').upsert({ key: 'branding', value: brandingSettings });
     localStorage.setItem('heichal_whatsapp', whatsappNumber);
     localStorage.setItem('heichal_instagram', instagramName);
     alert('ההגדרות נשמרו!');
