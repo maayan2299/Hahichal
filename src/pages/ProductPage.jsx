@@ -174,7 +174,7 @@ export default function ProductPage() {
 
             {/* תיאור */}
             {product.description && (
-              <p className="text-gray-600 leading-relaxed mb-8 text-sm">
+              <p className="text-gray-600 leading-relaxed mb-8 text-sm whitespace-pre-line">
                 {product.description}
               </p>
             )}

@@ -1304,10 +1304,14 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                 ].map(({ key, label, icon }) => (
                   <div key={key} style={{ background: BG, borderRadius: '10px', padding: '14px', border: `1px solid ${BR}` }}>
                     <div style={{ fontSize: '13px', fontWeight: '700', color: BK, marginBottom: '10px' }}>{icon} {label}</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                       <div>
-                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מחיר (₪)</label>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מחיר בסיס (₪)</label>
                         <input type="number" min="0" value={brandingSettings[key]?.price ?? ''} onChange={e => updateBranding(key, 'price', parseFloat(e.target.value) || 0)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מחיר למילה (₪)</label>
+                        <input type="number" min="0" value={brandingSettings[key]?.per_word_price ?? ''} onChange={e => updateBranding(key, 'per_word_price', parseFloat(e.target.value) || 0)} style={{ ...inp, padding: '9px 12px', fontSize: '13px' }} />
                       </div>
                       <div>
                         <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', fontWeight: '600' }}>מגבלת תווים</label>

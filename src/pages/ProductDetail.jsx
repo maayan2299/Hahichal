@@ -159,6 +159,7 @@ export default function ProductDetail() {
             config[type].price = s.price
             config[type].priceLabel = `₪${s.price}`
           }
+          if (s.per_word_price !== undefined) config[type].per_word_price = s.per_word_price
           if (s.text_limit !== undefined) config[type].text_limit = s.text_limit
         }
       })
@@ -172,8 +173,14 @@ export default function ProductDetail() {
     engravingTypes.forEach(type => {
       const config = engravingConfig[type]
       const data = customizationData[type] || {}
-      if (config?.fields.includes('checkbox') ? data.checked : data.text?.trim()) {
-        extra += config.price
+      const isActive = config?.fields.includes('checkbox') ? data.checked : data.text?.trim()
+      if (isActive) {
+        if (config.per_word_price && data.text?.trim()) {
+          const wordCount = data.text.trim().split(/\s+/).length
+          extra += config.per_word_price * wordCount
+        } else {
+          extra += config.price
+        }
       }
     })
     Object.values(selectedOptions).forEach(val => {
@@ -348,7 +355,9 @@ export default function ProductDetail() {
                 <div key={type} className="border border-gray-200 rounded-lg mb-4 overflow-hidden shadow-sm">
                   <div className="bg-gray-50 px-4 py-3 flex justify-between border-b border-gray-200">
                     <span className="text-sm font-semibold">{config.icon} {config.label}</span>
-                    <span className="text-sm font-bold" style={{ color: '#C9A84C' }}>+{config.priceLabel}</span>
+                    <span className="text-sm font-bold" style={{ color: '#C9A84C' }}>
+                      {config.per_word_price > 0 ? `₪${config.per_word_price} למילה` : `+${config.priceLabel}`}
+                    </span>
                   </div>
                   <div className="p-4 space-y-4">
                     {config.fields.includes('checkbox') && (
