@@ -83,7 +83,7 @@ export default function ProductDetail() {
             *,
             categories!products_category_id_fkey(name, id),
             product_images(image_url, is_primary, display_order),
-            product_colors(id, color_name, color_code, display_order)
+            product_colors(id, color_name, color_code, display_order, price_delta)
           `)
           .eq('id', id)
           .single()
