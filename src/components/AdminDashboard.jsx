@@ -1811,6 +1811,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                     <div>
                       <div style={{ fontWeight: '600', fontSize: '13px' }}>{c.color_name}</div>
                       <div style={{ fontSize: '11px', color: '#aaa' }}>{c.color_code}</div>
+                      {parseFloat(c.price_delta) > 0 && <div style={{ fontSize: '11px', color: G }}>+₪{c.price_delta}</div>}
                     </div>
                   </div>
                   <button onClick={() => deleteColor(c.id)} style={{ ...btn(WH, '#dc2626', { padding: '5px 7px', border: '1px solid #fca5a5' }) }}><Trash2 size={13}/></button>
