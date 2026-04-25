@@ -1716,7 +1716,52 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                 </div>  
                 </div>
 
-
+              {/* כמות */}
+              <div style={{ marginTop: '10px', border: `1px solid ${BR}`, borderRadius: '8px', overflow: 'hidden' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: WH, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={(productForm.product_options || []).some(o => o.name === 'כמות')}
+                    onChange={e => {
+                      const opts = (productForm.product_options || []).filter(o => o.name !== 'כמות');
+                      if (e.target.checked) opts.push({ name: 'כמות', required: true, values: [{ label: '', price_delta: 0 }] });
+                      setProductForm({...productForm, product_options: opts});
+                    }}
+                    style={{ width: 'auto', accentColor: G }} />
+                  <span style={{ fontSize: '13px', fontWeight: '600' }}>📦 כמות</span>
+                </label>
+                {(productForm.product_options || []).some(o => o.name === 'כמות') && (
+                  <div style={{ padding: '10px 12px', borderTop: `1px solid ${BR}`, background: BG }}>
+                    <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '8px' }}>הגדר מחיר לכל כמות (מחיר בסיס של המוצר צריך להיות 0₪)</div>
+                    {((productForm.product_options || []).find(o => o.name === 'כמות')?.values || []).map((val, valIdx) => {
+                      const optIdx = (productForm.product_options || []).findIndex(o => o.name === 'כמות');
+                      return (
+                        <div key={valIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px' }}>
+                          <input value={val.label} onChange={e => {
+                            const opts = [...productForm.product_options];
+                            opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], label: e.target.value };
+                            setProductForm({...productForm, product_options: opts});
+                          }} placeholder='למשל: 20 יחידות' style={{ ...inp, flex: 2, padding: '7px 10px', fontSize: '13px' }} />
+                          <input type="number" min="0" value={val.price_delta || ''} onChange={e => {
+                            const opts = [...productForm.product_options];
+                            opts[optIdx].values[valIdx] = { ...opts[optIdx].values[valIdx], price_delta: parseFloat(e.target.value) || 0 };
+                            setProductForm({...productForm, product_options: opts});
+                          }} placeholder="מחיר ₪" style={{ ...inp, width: '90px', padding: '7px 10px', fontSize: '13px' }} />
+                          <button type="button" onClick={() => {
+                            const opts = [...productForm.product_options];
+                            opts[optIdx].values = opts[optIdx].values.filter((_, i) => i !== valIdx);
+                            setProductForm({...productForm, product_options: opts});
+                          }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb' }}><X size={14}/></button>
+                        </div>
+                      );
+                    })}
+                    <button type="button" onClick={() => {
+                      const opts = [...productForm.product_options];
+                      const optIdx = opts.findIndex(o => o.name === 'כמות');
+                      opts[optIdx].values = [...(opts[optIdx].values || []), { label: '', price_delta: 0 }];
+                      setProductForm({...productForm, product_options: opts});
+                    }} style={{ ...btn(BK, WH, { padding: '5px 10px', fontSize: '11px' }) }}><Plus size={10}/> הוסף כמות</button>
+                  </div>
+                )}
+              </div>
                 {/* מוצרים משלימים */}
                 <div style={{ background: BG, padding: '14px', borderRadius: '8px', border: `1px solid ${BR}` }}>
                   <div style={{ fontSize: '13px', fontWeight: '700', color: BK, marginBottom: '10px' }}>🔗 מוצרים משלימים (המלצה)</div>
