@@ -155,17 +155,31 @@ export default function ProductDetail() {
       const saved = brandingSettings || {}
       Object.entries(saved).forEach(([type, s]) => {
         if (config[type]) {
-          if (s.price !== undefined) {
-            config[type].price = s.price
-            config[type].priceLabel = `₪${s.price}`
-          }
-          if (s.per_word_price !== undefined) config[type].per_word_price = s.per_word_price
           if (s.text_limit !== undefined) config[type].text_limit = s.text_limit
+        }
+      })
+      // עדכן מחיר לפי הגדרות המוצר הספציפי
+      engravingTypes.forEach(type => {
+        const engravingPrice = product.engraving_prices?.[type]
+        if (config[type]) {
+          if (engravingPrice?.per_letter > 0) {
+            config[type].per_word_price = engravingPrice.per_letter
+            config[type].price = 0
+            config[type].priceLabel = `₪${engravingPrice.per_letter} למילה`
+          } else if (engravingPrice?.fixed > 0) {
+            config[type].price = engravingPrice.fixed
+            config[type].priceLabel = `₪${engravingPrice.fixed}`
+          } else {
+            config[type].price = 0
+            config[type].priceLabel = `₪0`
+          }
         }
       })
       return config
     } catch { return ENGRAVING_CONFIG }
   }
+
+
   const engravingConfig = getEngravingConfig()
 
   const calculateExtraPrice = () => {
