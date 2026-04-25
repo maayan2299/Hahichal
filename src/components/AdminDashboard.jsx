@@ -233,7 +233,8 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       dimensions: productForm.dimensions || null,
       material: productForm.material || null,
       complementary_ids: productForm.complementary_ids?.length > 0 ? productForm.complementary_ids : null,
-      product_options: productOptions.length > 0 ? productOptions : null
+      product_options: productOptions.length > 0 ? productOptions : null,
+      engraving_prices: productForm.engraving_prices || null,
     };
     try {
       let productId;
