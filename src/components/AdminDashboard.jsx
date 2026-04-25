@@ -216,9 +216,9 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     }
     // שמור גדלים כ-product_options
     const productOptions = (productForm.product_options || [])
-      .filter(opt => opt.name && opt.values?.filter(v => v.label).length > 0)
-      .map(opt => ({ ...opt, values: opt.values.filter(v => v.label) }));
-    const data = {
+        .filter(opt => opt.name && opt.values?.filter(v => v.label).length > 0)
+        .map(opt => ({ name: opt.name, required: opt.required, values: opt.values.filter(v => v.label).map(v => ({ label: v.label, price_delta: v.price_delta || 0 })) }));
+        const data = {
       name: productForm.name, price: parseFloat(productForm.price),
       description: productForm.description, category_id: productForm.category_id || null,
       stock_quantity: parseInt(productForm.stock_quantity) || 0,
