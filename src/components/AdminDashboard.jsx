@@ -215,9 +215,9 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
         salePrice = parseFloat(productForm.sale_price);
     }
     // שמור גדלים כ-product_options
-    const sizesOption = productForm.has_sizes && productForm.sizes?.filter(s => s.label).length > 0
-      ? [{ type: 'sizes', name: 'גודל', required: true, values: productForm.sizes.filter(s => s.label) }]
-      : null;
+    const productOptions = (productForm.product_options || [])
+      .filter(opt => opt.name && opt.values?.filter(v => v.label).length > 0)
+      .map(opt => ({ ...opt, values: opt.values.filter(v => v.label) }));
     const data = {
       name: productForm.name, price: parseFloat(productForm.price),
       description: productForm.description, category_id: productForm.category_id || null,
@@ -233,7 +233,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       dimensions: productForm.dimensions || null,
       material: productForm.material || null,
       complementary_ids: productForm.complementary_ids?.length > 0 ? productForm.complementary_ids : null,
-      product_options: sizesOption
+      product_options: productOptions.length > 0 ? productOptions : null
     };
     try {
       let productId;
