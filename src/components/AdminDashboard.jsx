@@ -298,7 +298,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
       complementary_ids: product.complementary_ids || [], product_options: product.product_options || [],
       has_sizes: !!(product.product_options?.find(o => o.type === 'sizes')?.values?.length),
       sizes: product.product_options?.find(o => o.type === 'sizes')?.values || [],
-      has_colors: false, inline_colors: [], extra_category_ids: [], engraving_prices: {}
+      has_colors: false, inline_colors: [], extra_category_ids: [], engraving_prices: product.engraving_prices || {}
     } : {
       name: '', price: '', description: '', category_id: prefillCat,
       stock_quantity: 0, allows_engraving: false, engraving_types: [],
