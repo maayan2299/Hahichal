@@ -175,9 +175,12 @@ export default function ProductDetail() {
       const data = customizationData[type] || {}
       const isActive = config?.fields.includes('checkbox') ? data.checked : data.text?.trim()
       if (isActive) {
-        if (config.per_word_price && data.text?.trim()) {
+        const engravingPrice = product.engraving_prices?.[type]
+        if (engravingPrice?.per_letter > 0 && data.text?.trim()) {
           const wordCount = data.text.trim().split(/\s+/).length
-          extra += config.per_word_price * wordCount
+          extra += engravingPrice.per_letter * wordCount
+        } else if (engravingPrice?.fixed > 0) {
+          extra += engravingPrice.fixed
         } else {
           extra += config.price
         }
