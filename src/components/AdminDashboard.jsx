@@ -170,7 +170,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
   const loadAll = async () => {
     setLoading(true);
     const [pRes, cRes, rRes, cpRes, ppRes, oRes, sRes] = await Promise.all([
-      supabase.from('products').select(`*, categories!products_category_id_fkey(name), product_images(image_url, is_primary), product_colors(id)`).order('created_at', { ascending: false }),
+      supabase.from('products').select(`*, categories!products_category_id_fkey(name), product_images(image_url, is_primary), product_colors(id), engraving_prices`).order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('display_order'),
       supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
       supabase.from('coupons').select('*').order('created_at', { ascending: false }),
