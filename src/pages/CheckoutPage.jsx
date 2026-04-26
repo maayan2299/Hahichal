@@ -10,9 +10,10 @@ export default function CheckoutPage() {
 
   const [formData, setFormData] = useState({
     fullName: '', phone: '', email: '',
+    contactName: '', contactPhone: '',
     street: '', city: '', zipCode: '',
     shippingMethod: 'standard', paymentMethod: 'credit',
-    notes: '', blessing: ''
+    notes: ''
   })
 
   const [errors, setErrors] = useState({})
