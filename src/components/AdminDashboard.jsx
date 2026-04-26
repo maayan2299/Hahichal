@@ -280,6 +280,21 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
     await loadAll();
   };
 
+  const duplicateProduct = async (p) => {
+    const { id, created_at, updated_at, categories, product_images, product_colors, ...productData } = p;
+    const { data: np } = await supabase.from('products').insert([{ 
+      ...productData, 
+      name: `${p.name} - עותק`,
+      is_active: false 
+    }]).select().single();
+    if (np && p.product_images?.length > 0) {
+      const images = p.product_images.map((img, i) => ({ product_id: np.id, image_url: img.image_url, is_primary: img.is_primary, display_order: i }));
+      await supabase.from('product_images').insert(images);
+    }
+    await loadAll();
+    alert('המוצר שוכפל בהצלחה!');
+  };
+
   const toggleFeatured = async (p) => {
     await supabase.from('products').update({ is_featured: !p.is_featured }).eq('id', p.id);
     await loadAll();
@@ -813,6 +828,7 @@ const MainDashboard = ({ onLogout, logoUrl, setLogoUrl }) => {
                     </div>
                     <div style={{ display: 'flex', gap: '5px' }}>
                       <button onClick={() => openProductModal(p)} style={{ flex: 1, ...btn(BK, WH, { padding: '7px', justifyContent: 'center', fontSize: '12px' }) }}><Edit size={12}/> ערוך</button>
+                      <button onClick={() => duplicateProduct(p)} style={{ ...btn(BG, BK, { padding: '7px 10px', border: `1px solid ${BR}`, fontSize: '11px' }) }}>⧉</button>
                       <button onClick={() => deleteProduct(p.id)} style={{ ...btn(WH, '#dc2626', { padding: '7px 10px', border: '1px solid #fca5a5' }) }}><Trash2 size={14}/></button>
                     </div>
                   </div>
