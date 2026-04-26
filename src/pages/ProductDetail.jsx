@@ -169,9 +169,13 @@ export default function ProductDetail() {
           } else if (engravingPrice?.fixed > 0) {
             config[type].price = engravingPrice.fixed
             config[type].priceLabel = `₪${engravingPrice.fixed}`
+          } else if (engravingPrice?.per_letter > 0) {
+            config[type].per_word_price = engravingPrice.per_letter
+            config[type].price = 0
+            config[type].priceLabel = `₪${engravingPrice.per_letter} למילה`
           } else {
             config[type].price = 0
-            config[type].priceLabel = `₪0`
+            config[type].priceLabel = `ללא תוספת`
           }
         }
       })

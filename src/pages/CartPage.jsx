@@ -150,13 +150,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between text-base">
                   <span className="text-gray-600">משלוח:</span>
-                  <span className="font-medium">
-                    {getShipping() === 0 ? (
-                      <span className="text-green-600">חינם!</span>
-                    ) : (
-                      `₪${getShipping()}`
-                    )}
-                  </span>
+                  <span className="font-medium text-gray-400 text-sm">יחושב בדף התשלום</span>
                 </div>
                 
                 {getShipping() > 0 && (
@@ -167,7 +161,7 @@ export default function CartPage() {
                 
                 <div className="border-t-2 border-gray-300 pt-3 flex justify-between font-bold text-xl">
                   <span>סה"כ לתשלום:</span>
-                  <span>₪{getTotal().toLocaleString('he-IL')}</span>
+                  <span>₪{getSubtotal().toLocaleString('he-IL')}</span>
                 </div>
               </div>
 
