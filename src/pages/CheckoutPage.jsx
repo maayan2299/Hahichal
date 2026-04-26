@@ -9,12 +9,12 @@ export default function CheckoutPage() {
   const { cart, getSubtotal, getShipping, clearCart } = useCart()
 
   const [formData, setFormData] = useState({
-    fullName: '', phone: '', email: '',
-    contactName: '', contactPhone: '',
-    street: '', city: '', zipCode: '',
-    shippingMethod: 'standard', paymentMethod: 'credit',
-    notes: ''
-  })
+      fullName: '', phone: '', email: '',
+      contactName: '', contactPhone: '',
+      street: '', city: '', zipCode: '',
+      shippingMethod: 'standard', paymentMethod: 'credit',
+      notes: ''
+    })
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -72,6 +72,8 @@ export default function CheckoutPage() {
     if (error || !data) { setCouponError('קוד קופון לא תקין או לא פעיל'); return }
     if (data.expires_at && new Date(data.expires_at) < new Date()) { setCouponError('קוד הקופון פג תוקף'); return }
     if (data.min_order > 0 && subtotal < data.min_order) { setCouponError(`סכום מינימלי להזמנה: ₪${data.min_order}`); return }
+    const hasDiscountedItems = cart.some(item => item.on_sale)
+    if (hasDiscountedItems) { setCouponError('לא ניתן לשלב קופון עם מוצרים במבצע'); return }
 
     setAppliedCoupon(data)
   }
@@ -233,6 +235,18 @@ export default function CheckoutPage() {
                       className={`w-full border-2 ${errors.email ? 'border-red-500' : 'border-gray-300'} p-3 focus:border-black focus:outline-none transition-colors`}
                       placeholder="example@email.com" />
                     {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">שם איש קשר</label>
+                    <input type="text" name="contactName" value={formData.contactName} onChange={handleInputChange}
+                      className="w-full border-2 border-gray-300 p-3 focus:border-black focus:outline-none transition-colors"
+                      placeholder="שם איש קשר (אם שונה מהמזמין)" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">טלפון איש קשר</label>
+                    <input type="tel" name="contactPhone" value={formData.contactPhone} onChange={handleInputChange}
+                      className="w-full border-2 border-gray-300 p-3 focus:border-black focus:outline-none transition-colors"
+                      placeholder="050-1234567" />
                   </div>
                 </div>
               </div>
