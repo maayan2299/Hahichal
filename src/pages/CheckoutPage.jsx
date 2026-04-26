@@ -144,6 +144,22 @@ export default function CheckoutPage() {
         throw new Error('שגיאה בשמירת הנתונים בבסיס הנתונים')
       }
 
+      // עדכון מלאי
+      for (const item of cart) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('stock_quantity')
+          .eq('id', item.id)
+          .single()
+        
+        if (product && product.stock_quantity > 0) {
+          await supabase
+            .from('products')
+            .update({ stock_quantity: Math.max(0, product.stock_quantity - item.quantity) })
+            .eq('id', item.id)
+        }
+      }
+
       // 4. פנייה ל-HYP
       const response = await fetch('/api/create-hyp-session', {
         method: 'POST',
