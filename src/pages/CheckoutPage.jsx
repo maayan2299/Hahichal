@@ -103,7 +103,7 @@ export default function CheckoutPage() {
 
   const handleCheckout = async (e) => {
     e.preventDefault()
-
+    if (isSubmitting) return
     if (!validateForm()) {
       const firstError = document.querySelector('.border-red-500')
       if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -276,7 +276,6 @@ export default function CheckoutPage() {
                 <div className="space-y-3">
                   {[
                     { val: 'credit', title: 'כרטיס אשראי', desc: 'Visa, Mastercard, American Express' },
-                    { val: 'paypal', title: 'PayPal', desc: 'תשלום מאובטח דרך PayPal' },
                   ].map(opt => (
                     <label key={opt.val} className={`flex items-center p-4 border-2 cursor-pointer transition-colors ${formData.paymentMethod === opt.val ? 'border-black bg-gray-50' : 'border-gray-300 hover:border-gray-400'}`}>
                       <input type="radio" name="paymentMethod" value={opt.val} checked={formData.paymentMethod === opt.val} onChange={handleInputChange} className="ml-3" />
@@ -321,14 +320,6 @@ export default function CheckoutPage() {
                     {couponError && <p className="text-red-500 text-sm mt-2">{couponError}</p>}
                   </div>
                 )}
-              </div>
-
-              {/* ברכה אישית */}
-              <div className="bg-white border border-gray-200 p-6">
-                <h2 className="text-2xl font-bold mb-6">ברכה אישית</h2>
-                <textarea name="blessing" value={formData.blessing} onChange={handleInputChange} rows="3"
-                  className="w-full border-2 border-gray-300 p-3 focus:border-black focus:outline-none transition-colors"
-                  placeholder="האם תרצה להוסיף ברכה אישית למוצר? (אופציונלי)" />
               </div>
 
               {/* הערות */}
