@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       KEY: KEY,
       PassP: PASSP,
       Masof: MASOF,
-      Amount: String(Math.round(Number(amount))),
+      Amount: String(Math.round(Number(amount) * 100) / 100),
       Order: String(orderId),
       Info: customerName || 'הזמנה',
       email: customerEmail || '',
