@@ -257,7 +257,6 @@ export default function CheckoutPage() {
                 <div className="space-y-3">
                   {[
                     { val: 'standard', title: 'משלוח רגיל', desc: `בין 5-7 ימי עסקים • ${getShipping() === 0 ? 'חינם!' : `₪${getShipping()}`}` },
-                    { val: 'express', title: 'משלוח מהיר', desc: '1-2 ימי עסקים • ₪60' },
                     { val: 'pickup', title: 'איסוף עצמי מקריית אתא', desc: 'ללא עלות' },
                   ].map(opt => (
                     <label key={opt.val} className={`flex items-center p-4 border-2 cursor-pointer transition-colors ${formData.shippingMethod === opt.val ? 'border-black bg-gray-50' : 'border-gray-300 hover:border-gray-400'}`}>
