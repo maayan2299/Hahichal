@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase'
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
-  const { cart, getSubtotal, getShipping, clearCart } = useCart()
+  const { cart, getSubtotal, getBaseSubtotal, getShipping, clearCart } = useCart()
 
   const [formData, setFormData] = useState({
       fullName: '', phone: '', email: '',
@@ -45,10 +45,11 @@ export default function CheckoutPage() {
 
   const getCouponDiscount = () => {
     if (!appliedCoupon) return 0
+    const baseSubtotal = getBaseSubtotal()
     if (appliedCoupon.discount_type === 'percentage') {
-      return Math.round(subtotal * appliedCoupon.discount_value / 100 * 100) / 100
+      return Math.round(baseSubtotal * appliedCoupon.discount_value / 100 * 100) / 100
     }
-    return Math.min(appliedCoupon.discount_value, subtotal)
+    return Math.min(appliedCoupon.discount_value, baseSubtotal)
   }
 
   const couponDiscount = getCouponDiscount()
@@ -147,6 +148,17 @@ export default function CheckoutPage() {
         throw new Error('שגיאה בשמירת הנתונים בבסיס הנתונים')
       }
 
+      await fetch('/api/send-order-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderNumber,
+          customerName: formData.fullName,
+          customerEmail: formData.email,
+          items: cart,
+          total: finalTotal
+        })
+      });
       // עדכון מלאי
       for (const item of cart) {
         const { data: product } = await supabase

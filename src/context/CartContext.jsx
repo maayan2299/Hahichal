@@ -106,6 +106,13 @@ export function CartProvider({ children }) {
     }, 0)
   }
 
+  const getBaseSubtotal = () => {
+    return cart.reduce((total, item) => {
+      const basePrice = parseFloat(item.displayPrice || item.sale_price || item.price) || 0
+      return total + basePrice * item.quantity
+    }, 0)
+  }
+
   // חשב משלוח (ניתן לעקוף מ-localStorage)
   const getShipping = () => {
     const subtotal = getSubtotal()
