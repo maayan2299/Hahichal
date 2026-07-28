@@ -62,22 +62,16 @@ export default function HomePage() {
       <CartDrawer />
       <Header />
 
-      {/* באנר ראשי */}
-      <section className="w-full pt-20">
-        <div className="relative w-full" style={{ maxHeight: '600px', overflow: 'hidden' }}>
+      {/* באנר ראשי - עם שוליים קטנים, כפתור על התמונה */}
+      <section className="w-full bg-white pt-20 px-6 md:px-12">
+        <div className="relative">
           <img
             src={mainBannerUrl}
             alt="באנר"
-            style={{
-              width: '100%',
-              height: '560px',
-              objectFit: 'cover',
-              objectPosition: 'center',
-              display: 'block'
-            }}
+            className="w-full h-auto object-contain max-h-[600px]"
           />
-          {/* כפתור על התמונה - בצד ימין מתחת לטקסט */}
-          <div style={{ position: 'absolute', bottom: '18%', right: '25%' }}>
+          {/* כפתור על התמונה — בצד ימין מתחת לטקסט */}
+          <div style={{ position: 'absolute', bottom: '20%', right: '55%' }}>
             <a
               href="#categories"
               onClick={e => {
@@ -88,17 +82,16 @@ export default function HomePage() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '12px 32px',
+                padding: '12px 28px',
                 fontWeight: '700',
                 fontSize: '14px',
                 letterSpacing: '2px',
                 background: 'linear-gradient(90deg, #7A5500 0%, #EED072 20%, #FBF6B8 50%, #EED072 80%, #7A5500 100%)',
                 color: '#111',
                 fontFamily: "'Heebo', sans-serif",
-                boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
                 cursor: 'pointer',
                 textDecoration: 'none',
-                transition: 'transform 0.2s',
               }}
               onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
