@@ -65,9 +65,8 @@ export default function HomePage() {
       {/* באנר ראשי - ללא שוליים */}
       <section className="w-full bg-white pt-20">
         <div className="relative">
-          <img src={mainBannerUrl} alt="באנר" className="w-full object-cover" style={{ height: '420px' }} />
-          {/* כפתור לצפייה בקטגוריות */}
-          <div className="absolute bottom-8 right-16 md:right-24">
+          <img src={mainBannerUrl} alt="באנר" className="w-full h-auto object-contain max-h-[600px]" />
+          <div className="absolute bottom-8 right-8 md:right-16">   
             <a
               href="#categories"
               onClick={e => {
