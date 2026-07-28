@@ -63,24 +63,49 @@ export default function HomePage() {
       <Header />
 
       {/* באנר ראשי */}
-      <section className="w-full bg-white pt-20">
-        <img src={mainBannerUrl} alt="באנר" className="w-full h-auto object-contain max-h-[600px]" />
-        {/* כפתור מתחת לבאנר, מיושר לימין */}
-        <div className="flex justify-end px-8 md:px-32 py-4 bg-white">
-          <a
-            href="#categories"
-            onClick={e => {
-              e.preventDefault()
-              document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })
-            }}
-            className="inline-flex items-center gap-2 px-8 py-3 font-bold text-sm tracking-widest transition-all hover:scale-105 shadow-lg"
+      <section className="w-full pt-20">
+        <div className="relative w-full" style={{ maxHeight: '600px', overflow: 'hidden' }}>
+          <img
+            src={mainBannerUrl}
+            alt="באנר"
             style={{
-              background: 'linear-gradient(90deg, #7A5500 0%, #EED072 20%, #FBF6B8 50%, #EED072 80%, #7A5500 100%)',
-              color: '#111',
-              fontFamily: "'Heebo', sans-serif"
-            }}>
-            לצפייה בקטגוריות ↓
-          </a>
+              width: '100%',
+              height: '560px',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              display: 'block'
+            }}
+          />
+          {/* כפתור על התמונה - בצד ימין מתחת לטקסט */}
+          <div style={{ position: 'absolute', bottom: '18%', right: '25%' }}>
+            <a
+              href="#categories"
+              onClick={e => {
+                e.preventDefault()
+                document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 32px',
+                fontWeight: '700',
+                fontSize: '14px',
+                letterSpacing: '2px',
+                background: 'linear-gradient(90deg, #7A5500 0%, #EED072 20%, #FBF6B8 50%, #EED072 80%, #7A5500 100%)',
+                color: '#111',
+                fontFamily: "'Heebo', sans-serif",
+                boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                cursor: 'pointer',
+                textDecoration: 'none',
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              לצפייה בקטגוריות ↓
+            </a>
+          </div>
         </div>
       </section>
 
@@ -157,8 +182,7 @@ export default function HomePage() {
               { text: 'מוצרים מדהימים! הכוס קידוש שקניתי הייתה מושלמת. השירות היה מעולה ומשלוח מהיר.' },
               { text: 'המשלוח הגיע מהר מאוד והמוצר נראה אפילו יותר טוב במציאות!' }
             ].map((review, i) => (
-              <div
-                key={i}
+              <div key={i}
                 className="bg-white rounded-2xl p-6 md:p-8 border border-[#E8E0D0] italic shadow-sm snap-start flex-shrink-0 w-[calc(50%-8px)] md:w-1/3 min-h-[180px] flex items-center justify-center text-[13px] md:text-lg leading-relaxed">
                 <div dir="rtl">"{review.text}"</div>
               </div>
@@ -176,26 +200,10 @@ export default function HomePage() {
         </div>
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
           {[
-            {
-              label: 'איכות גבוהה',
-              sub: 'תשמישי קדושה\nאיכותיים לכל בית',
-              icon: <svg className="w-10 h-10 mx-auto mb-4" viewBox="0 0 24 24" fill="none"><path d="M12 15L15 13V7L12 9L9 7V13L12 15Z" fill="#C9A84C"/><path d="M12 2L3 7V17L12 22L21 17V7L12 2ZM19 15.82L12 19.71L5 15.82V8.18L12 4.29L19 8.18V15.82Z" fill="#C9A84C"/></svg>
-            },
-            {
-              label: 'תשלום מאובטח',
-              sub: 'בכל דרך\nשנוחה לך',
-              icon: <svg className="w-10 h-10 mx-auto mb-4" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM12 7C13.1 7 14 7.9 14 9V11H10V9C10 7.9 10.9 7 12 7ZM17 17H7V13H17V17Z" fill="#C9A84C"/></svg>
-            },
-            {
-              label: 'שירות לקוחות',
-              sub: 'זמינים כאן\nלכל שאלה',
-              icon: <svg className="w-10 h-10 mx-auto mb-4" viewBox="0 0 24 24" fill="none"><path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM17 11H15V9H17V11ZM13 11H11V9H13V11ZM9 11H7V9H9V11Z" fill="#C9A84C"/></svg>
-            },
-            {
-              label: 'משלוח חינם',
-              sub: 'מעל\n299 ₪',
-              icon: <svg className="w-10 h-10 mx-auto mb-4" viewBox="0 0 24 24" fill="none"><path d="M20 8H17V4H3C1.9 4 1 4.9 1 6V17H3C3 18.66 4.34 20 6 20C7.66 20 9 18.66 9 17H15C15 18.66 16.34 20 18 20C19.66 20 21 18.66 21 17H23V12L20 8ZM6 18.5C5.17 18.5 4.5 17.83 4.5 17C4.5 16.17 5.17 15.5 6 15.5C6.83 15.5 7.5 16.17 7.5 17C7.5 17.83 6.83 18.5 6 18.5ZM18 18.5C17.17 18.5 16.5 17.83 16.5 17C16.5 16.17 17.17 15.5 18 15.5C18.83 15.5 19.5 16.17 19.5 17C19.5 17.83 18.83 18.5 18 18.5Z" fill="#C9A84C"/></svg>
-            }
+            { label: 'איכות גבוהה', sub: 'תשמישי קדושה\nאיכותיים לכל בית', icon: <svg className="w-10 h-10 mx-auto mb-4" viewBox="0 0 24 24" fill="none"><path d="M12 15L15 13V7L12 9L9 7V13L12 15Z" fill="#C9A84C"/><path d="M12 2L3 7V17L12 22L21 17V7L12 2ZM19 15.82L12 19.71L5 15.82V8.18L12 4.29L19 8.18V15.82Z" fill="#C9A84C"/></svg> },
+            { label: 'תשלום מאובטח', sub: 'בכל דרך\nשנוחה לך', icon: <svg className="w-10 h-10 mx-auto mb-4" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM12 7C13.1 7 14 7.9 14 9V11H10V9C10 7.9 10.9 7 12 7ZM17 17H7V13H17V17Z" fill="#C9A84C"/></svg> },
+            { label: 'שירות לקוחות', sub: 'זמינים כאן\nלכל שאלה', icon: <svg className="w-10 h-10 mx-auto mb-4" viewBox="0 0 24 24" fill="none"><path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM17 11H15V9H17V11ZM13 11H11V9H13V11ZM9 11H7V9H9V11Z" fill="#C9A84C"/></svg> },
+            { label: 'משלוח חינם', sub: 'מעל\n299 ₪', icon: <svg className="w-10 h-10 mx-auto mb-4" viewBox="0 0 24 24" fill="none"><path d="M20 8H17V4H3C1.9 4 1 4.9 1 6V17H3C3 18.66 4.34 20 6 20C7.66 20 9 18.66 9 17H15C15 18.66 16.34 20 18 20C19.66 20 21 18.66 21 17H23V12L20 8ZM6 18.5C5.17 18.5 4.5 17.83 4.5 17C4.5 16.17 5.17 15.5 6 15.5C6.83 15.5 7.5 16.17 7.5 17C7.5 17.83 6.83 18.5 6 18.5ZM18 18.5C17.17 18.5 16.5 17.83 16.5 17C16.5 16.17 17.17 15.5 18 15.5C18.83 15.5 19.5 16.17 19.5 17C19.5 17.83 18.83 18.5 18 18.5Z" fill="#C9A84C"/></svg> }
           ].map((item, i) => (
             <div key={i} className="flex flex-col items-center">
               {item.icon}
@@ -207,10 +215,7 @@ export default function HomePage() {
       </section>
 
       {/* כפתור וואטסאפ צף */}
-      <a
-        href="https://wa.me/972542115584"
-        target="_blank"
-        rel="noopener noreferrer"
+      <a href="https://wa.me/972542115584" target="_blank" rel="noopener noreferrer"
         className="fixed bottom-6 left-6 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 flex items-center justify-center"
         aria-label="צרו קשר בוואטסאפ">
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
