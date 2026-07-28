@@ -65,8 +65,9 @@ export default function HomePage() {
       {/* באנר ראשי - ללא שוליים */}
       <section className="w-full bg-white pt-20">
         <div className="relative">
-          <img src={mainBannerUrl} alt="באנר" className="w-full h-auto object-cover max-h-[600px]" />
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+          <img src={mainBannerUrl} alt="באנר" className="w-full object-cover" style={{ height: '420px' }} />
+          {/* כפתור לצפייה בקטגוריות */}
+          <div className="absolute bottom-8 right-16 md:right-24">
             <a
               href="#categories"
               onClick={e => {
@@ -95,6 +96,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-5xl mb-8 font-shofar">הקטגוריות שלנו</h2>
           <div className="relative">
+            {/* חץ שמאל */}
             <button
               onClick={() => document.getElementById('cat-scroll').scrollBy({ left: -300, behavior: 'smooth' })}
               className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full w-10 h-10 items-center justify-center transition-all border border-gray-100">
@@ -102,6 +104,8 @@ export default function HomePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
+
+            {/* חץ ימין */}
             <button
               onClick={() => document.getElementById('cat-scroll').scrollBy({ left: 300, behavior: 'smooth' })}
               className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full w-10 h-10 items-center justify-center transition-all border border-gray-100">
@@ -109,6 +113,7 @@ export default function HomePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>
+
             <div id="cat-scroll" className="overflow-x-auto scrollbar-hide flex gap-3 snap-x snap-mandatory px-1">
               {categories.map((cat) => (
                 <Link key={cat.id} to={`/category/${cat.id}`} className="relative flex-shrink-0 w-[calc(33.33%-8px)] md:w-[280px] aspect-[3/4] rounded-xl overflow-hidden snap-start shadow-sm">
@@ -124,7 +129,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* אינסטגרם */}
+      {/* אינסטגרם - פס נע אינסופי */}
       {instagramImages.length > 0 && (
         <section className="py-12 bg-white overflow-hidden" dir="ltr">
           <div className="max-w-7xl mx-auto px-4 text-center mb-8" dir="rtl">
@@ -171,10 +176,6 @@ export default function HomePage() {
 
       {/* יתרונות */}
       <section className="bg-white py-20 border-t border-gray-50">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-5xl font-shofar">למה לקנות בההיכל?</h2>
-          <div className="h-1 w-20 bg-[#D4AF37] mx-auto mt-4"></div>
-        </div>
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
           {[
             {
